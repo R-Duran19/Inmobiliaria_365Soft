@@ -58,7 +58,6 @@ defineProps<{
                     <div class="flex items-center justify-between">
                         <Label for="password">Contraseña</Label>
                         <TextLink
-                            v-if="canResetPassword"
                             :href="request()"
                             class="text-sm"
                             :tabindex="5"
