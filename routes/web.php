@@ -11,18 +11,17 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Rutas protegidas por rol de administrador
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
-Route::get('proyectos', function () {
-    return Inertia::render('Proyectos');
-})->middleware(['auth', 'verified'])->name('proyectos');
+    //VISTAS INERTIA
+    Route::get('proyectos', fn () => Inertia::render('Proyectos'))->name('proyectos');
+    Route::get('terrenos', fn () => Inertia::render('Terrenos'))->name('terrenos');
+    Route::get('categorias', fn () => Inertia::render('Categorias'))->name('categorias');
 
-Route::get('terrenos', function () {
-    return Inertia::render('Terrenos');
-})->middleware(['auth', 'verified'])->name('terrenos');
-
-Route::get('categorias', function () {
-    return Inertia::render('Categorias');
-})->middleware(['auth', 'verified'])->name('categorias');
+    //FUNCIONES CONTROLADORES
+    
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
