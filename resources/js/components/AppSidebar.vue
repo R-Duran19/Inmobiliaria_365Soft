@@ -11,10 +11,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { categorias, dashboard, proyectos, terrenos } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, MapPin, Tag } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -22,6 +22,21 @@ const mainNavItems: NavItem[] = [
         title: 'Panel de Control',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Proyectos',
+        href: proyectos(),
+        icon: Folder,
+    },
+    {
+        title: 'Terrenos',
+        href: terrenos(),
+        icon: MapPin,
+    },
+    {
+        title: 'Categorias',
+        href: categorias(),
+        icon: Tag,
     },
 ];
 
