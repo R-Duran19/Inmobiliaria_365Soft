@@ -10,7 +10,7 @@ class CategoriaTerrenoController extends Controller
     public function index()
     {
         // Obtener todas las categorías con su proyecto relacionado
-        $categorias = CategoriaTerreno::with('proyecto')->get();
+        $categorias = CategoriaTerreno::all();
 
         // Retornar en JSON (útil para API o Vue.js)
         return response()->json([
