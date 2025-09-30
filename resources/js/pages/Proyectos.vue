@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { proyectos } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import ProyectosHeader from '@/pages/Proyectos/ProyectosHeader.vue';
@@ -16,7 +15,7 @@ defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'Proyectos', href: proyectos().url },
+  { title: 'Proyectos', href: '/proyectos' },
 ];
 </script>
 

@@ -2,6 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
   proyecto: {
@@ -44,8 +45,8 @@ const props = defineProps({
       {{ proyecto.nombre }}
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
-      <Badge :variant="proyecto.estado === 'Activo' ? 'default' : 'secondary'">
-        {{ proyecto.estado }}
+      <Badge :variant="proyecto.estado ? 'default' : 'secondary'">
+        {{ proyecto.estado ? 'Activo' : 'Inactivo' }}
       </Badge>
     </td>
   </tr>

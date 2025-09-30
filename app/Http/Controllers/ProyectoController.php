@@ -32,7 +32,7 @@ class ProyectoController extends Controller
 
         Proyecto::create($request->all());
 
-        return redirect()->route('proyectos.index')->with('success', 'Proyecto creado correctamente.');
+        return redirect()->route('proyectos')->with('success', 'Proyecto creado correctamente.');
     }
 
     public function update(Request $request, Proyecto $proyecto)
@@ -45,19 +45,19 @@ class ProyectoController extends Controller
 
         $proyecto->update($request->all());
 
-        return redirect()->route('proyectos.index')->with('success', 'Proyecto actualizado correctamente.');
+        return redirect()->route('proyectos')->with('success', 'Proyecto actualizado correctamente.');
     }
 
     public function destroy(Proyecto $proyecto)
     {
         $proyecto->delete();
 
-        return redirect()->route('proyectos.index')->with('success', 'Proyecto eliminado correctamente.');
+        return redirect()->route('proyectos')->with('success', 'Proyecto eliminado correctamente.');
     }
 
     public function export()
     {
-        // AUN POR IMPLEMENTAR
+        // Implementar lógica de exportación
         return response()->json(['message' => 'Funcionalidad de exportación en desarrollo.']);
     }
 }
