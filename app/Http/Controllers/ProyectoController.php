@@ -17,7 +17,7 @@ class ProyectoController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return Inertia::render('Proyectos/Index', [
+        return Inertia::render('Proyectos', [
             'proyectos' => $proyectos,
         ]);
     }

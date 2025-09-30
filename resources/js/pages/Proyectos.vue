@@ -3,8 +3,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { proyectos } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
-import ProyectosHeader from '@/components/proyectos/ProyectosHeader.vue';
-import ProyectosTable from '@/components/proyectos/ProyectosTable.vue';
+import ProyectosHeader from '@/pages/Proyectos/ProyectosHeader.vue';
+import ProyectosTable from '@/pages/Proyectos/ProyectosTable.vue';
 
 defineProps<{
   proyectos: Array<{
