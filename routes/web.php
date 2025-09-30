@@ -27,3 +27,4 @@ require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/categorias_terrenos.php';
 require __DIR__.'/accesos.php';
+require __DIR__.'/proyectos.php';
