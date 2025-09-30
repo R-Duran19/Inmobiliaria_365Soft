@@ -20,9 +20,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('categorias', fn () => Inertia::render('Categorias'))->name('categorias');
 
     //FUNCIONES CONTROLADORES
-    
+        
 });
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/categorias_terrenos.php';
+require __DIR__.'/accesos.php';

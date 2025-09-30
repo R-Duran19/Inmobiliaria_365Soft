@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +9,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -22,6 +20,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'estado',
+        'role_id',
     ];
 
     /**
@@ -49,6 +49,20 @@ class User extends Authenticatable
 
     public function role()
     {
-        return $this->belongsTo(Roles::class);
+        return $this->belongsTo(Roles::class, 'role_id');
+    }
+
+    public function hasRole(string $roleName): bool
+    {
+        return $this->role && $this->role->nombre === $roleName;
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        return in_array($this->role->nombre, $roles);
     }
 }

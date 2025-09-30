@@ -11,37 +11,52 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { categorias, dashboard, proyectos, terrenos } from '@/routes';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, MapPin, Tag } from 'lucide-vue-next';
+import { categorias, dashboard, proyectos, terrenos, accesos } from '@/routes';
+import type { NavItem } from '@/types';
+import { Folder, LayoutGrid, MapPin, Tag, LockKeyhole } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
+import { useAuth } from '@/composables/useAuth';
 
-const mainNavItems: NavItem[] = [
+const { hasAnyRole } = useAuth();
+
+const allMainNavItems: NavItem[] = [
     {
         title: 'Panel de Control',
-        href: dashboard(),
+        href: dashboard().url, 
         icon: LayoutGrid,
     },
     {
         title: 'Proyectos',
-        href: proyectos(),
+        href: proyectos().url, 
         icon: Folder,
+        roles: ['admin'],
     },
     {
         title: 'Terrenos',
-        href: terrenos(),
+        href: terrenos().url, 
         icon: MapPin,
+        roles: ['admin'],
     },
     {
         title: 'Categorias',
-        href: categorias(),
+        href: categorias().url, 
         icon: Tag,
+        roles: ['admin'],
+    },
+   {
+        title: 'Accesos',
+        href: accesos().url, 
+        icon: LockKeyhole,
+        roles: ['admin'],
     },
 ];
 
-const footerNavItems: NavItem[] = [
-];
+const mainNavItems = computed(() => {
+    return allMainNavItems.filter(item => hasAnyRole(item.roles || []));
+});
+
+const footerNavItems: NavItem[] = [];
 </script>
 
 <template>
@@ -50,6 +65,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
+                        <AppLogo />
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
