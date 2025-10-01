@@ -45,14 +45,17 @@ class ProyectoController extends Controller
 
         $proyecto->update($request->all());
 
-        return redirect()->route('proyectos')->with('success', 'Proyecto actualizado correctamente.');
+        return back()->with('success', 'Proyecto actualizado correctamente');
     }
 
     public function destroy(Proyecto $proyecto)
     {
         $proyecto->delete();
 
-        return redirect()->route('proyectos')->with('success', 'Proyecto eliminado correctamente.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Proyecto eliminado correctamente',
+        ]);
     }
 
     public function export()
