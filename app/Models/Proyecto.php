@@ -12,10 +12,19 @@ class Proyecto extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'fecha_lanzamiento',
+        'numero_lotes',
+        'ubicacion',
+        'fotografia',
         'estado',
     ];
 
     protected $casts = [
         'estado' => 'boolean',
+        'fecha_lanzamiento' => 'date',
+    ];
+
+    protected $attributes = [
+        'estado' => true, 
     ];
 }

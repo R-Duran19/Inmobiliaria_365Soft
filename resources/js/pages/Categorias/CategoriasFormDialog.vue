@@ -52,18 +52,21 @@ const handleSubmit = async () => {
       alert('El nombre es requerido');
       return;
     }
-
     if (!form.value.idproyecto) {
       alert('El proyecto es requerido');
       return;
     }
-
+    
+    if (!form.value.id) {
+      form.value.estado = true;
+    }
+    
     if (form.value.id) {
       await axios.put(`/categorias_terrenos/${form.value.id}`, form.value);
     } else {
       await axios.post('/categorias_terrenos', form.value);
     }
-
+    
     emit('save');
     emit('update:open', false);
   } catch (error) {
@@ -98,18 +101,6 @@ onMounted(cargarProyectos);
             <option v-for="proyecto in proyectos" :key="proyecto.id" :value="proyecto.id">
               {{ proyecto.nombre }}
             </option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <Label for="estado">Estado</Label>
-          <select
-            id="estado"
-            v-model="form.estado"
-            class="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
-            required
-          >
-            <option :value="true">Activo</option>
-            <option :value="false">Inactivo</option>
           </select>
         </div>
         <DialogFooter>

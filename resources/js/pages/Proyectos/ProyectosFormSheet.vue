@@ -12,11 +12,11 @@ import ProyectosForm from './ProyectosForm.vue';
 const open = ref(false);
 
 const handleSave = () => {
-  open.value = false; // Cerrar el panel después de guardar
+  open.value = false;
 };
 
 const handleCancel = () => {
-  open.value = false; // Cerrar el panel sin guardar
+  open.value = false;
 };
 </script>
 
@@ -25,7 +25,7 @@ const handleCancel = () => {
     <SheetTrigger as-child>
       <slot></slot>
     </SheetTrigger>
-    <SheetContent class="w-[90%] sm:w-[500px] md:w-[540px] p-6 dark:bg-gray-800"> 
+    <SheetContent class="w-[90%] sm:w-[500px] md:w-[540px] p-6 dark:bg-gray-800">
       <SheetHeader class="mb-4">
         <SheetTitle>Registro de Nuevo Proyecto</SheetTitle>
       </SheetHeader>

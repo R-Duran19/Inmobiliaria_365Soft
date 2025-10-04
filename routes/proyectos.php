@@ -12,7 +12,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->name('proyectos.')
     ->group(function () {
         Route::post('/', [ProyectoController::class, 'store'])->name('store');
-        Route::put('/{proyecto}', [ProyectoController::class, 'update'])->name('update');
+        Route::match(['put', 'post'], '/{proyecto}', [ProyectoController::class, 'update'])->name('update');
         Route::delete('/{proyecto}', [ProyectoController::class, 'destroy'])->name('destroy');
+        Route::patch('/{proyecto}/desactivar', [ProyectoController::class, 'desactivar'])->name('desactivar');
+        Route::patch('/{proyecto}/activar', [ProyectoController::class, 'activar'])->name('activar');
         Route::get('/export', [ProyectoController::class, 'export'])->name('export');
 });

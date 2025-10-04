@@ -10,6 +10,10 @@ defineProps<{
     id: number;
     nombre: string;
     descripcion: string;
+    fecha_lanzamiento: string | null;
+    numero_lotes: number | null;
+    ubicacion: string | null;
+    fotografia: string | null;
     estado: boolean;
   }>;
 }>();
