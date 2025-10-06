@@ -11,4 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('categorias_terrenos/desactivar/{id}', [CategoriaTerrenoController::class, 'desactivar'])->name('categorias_terrenos.desactivar');
     Route::patch('categorias_terrenos/activar/{id}', [CategoriaTerrenoController::class, 'activar'])->name('categorias_terrenos.activar');
     Route::get('categorias_terrenos/proyectos', [CategoriaTerrenoController::class, 'proyectos'])->name('categorias_terrenos.proyectos');
+    Route::get('categorias_terrenos/proyecto/{id}', [CategoriaTerrenoController::class, 'porProyecto'])
+    ->name('categorias_terrenos.porProyecto');
 });
+

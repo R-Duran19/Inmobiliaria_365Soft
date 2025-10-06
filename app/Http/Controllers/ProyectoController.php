@@ -250,4 +250,11 @@ class ProyectoController extends Controller
         // Implementar lógica de exportación
         return response()->json(['message' => 'Funcionalidad de exportación en desarrollo.']);
     }
+
+    public function apiIndex()
+    {
+        return Proyecto::select('id', 'nombre')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 }

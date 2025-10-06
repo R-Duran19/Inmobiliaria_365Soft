@@ -1,31 +1,41 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Terreno;
+use App\Models\Proyecto;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TerrenoController extends Controller
 {
     
-    public function index(Request $request)
-    {
-        $query = Terreno::query();
+   public function index(Request $request)
+{
+    $query = Terreno::with('proyecto'); // 👈 aquí ya trae el proyecto relacionado
 
-        if ($request->has('ubicacion')) {
-            $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
-        }
-
-        if ($request->has('idproyecto')) {
-            $query->where('idproyecto', $request->idproyecto);
-        }
-
-        return response()->json($query->get());
+    if ($request->has('ubicacion')) {
+        $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
     }
+
+    if ($request->has('idproyecto')) {
+        $query->where('idproyecto', $request->idproyecto);
+    }
+
+    $terrenos = $query->get();
+
+    return Inertia::render('Terrenos', [
+        'terrenos' => $terrenos,
+    ]);
+
+}
+
+
 
     
     public function store(Request $request)
     {
         $terreno = Terreno::create($request->all());
+        $terreno->load('proyecto');
         return response()->json($terreno, 201);
     }
 
@@ -34,6 +44,7 @@ class TerrenoController extends Controller
     {
         $terreno = Terreno::findOrFail($id);
         $terreno->update($request->all());
+        $terreno->load('proyecto');
         return response()->json($terreno);
     }
 
@@ -71,4 +82,22 @@ class TerrenoController extends Controller
 
         return Excel::download(new TerrenosExport, 'terrenos.xlsx');
     }
+
+    public function getTerrenos(Request $request)
+    {
+        $query = Terreno::with('proyecto'); // trae la relación con proyecto
+
+        if ($request->has('ubicacion')) {
+            $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
+        }
+
+        if ($request->has('idproyecto')) {
+            $query->where('idproyecto', $request->idproyecto);
+        }
+
+        $terrenos = $query->get();
+
+        return response()->json($terrenos);
+    }
+
 }
