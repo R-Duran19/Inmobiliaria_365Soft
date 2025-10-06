@@ -6,8 +6,8 @@
 /* 1️⃣ VARIABLES DE COLOR - Cambia estos valores */
 :root {
   /* Colores principales */
-  --primary-color: #3b82f6;        /* Azul principal - cámbialo a tu color */
-  --primary-hover: #2563eb;        /* Azul hover */
+  --primary-color: #4a9c31;        /* Azul principal - cámbialo a tu color */
+  --primary-hover: #3d9141;        /* Azul hover */
   --primary-color-text: #ffffff;   /* Texto sobre primary */
   
   /* Colores de fondo */
@@ -15,11 +15,11 @@
   --surface-card: #ffffff;         /* Fondo de tarjetas */
   
   /* Colores de texto */
-  --text-color: #1f2937;           /* Texto principal */
+  --text-color: #000000;           /* Texto principal */
   --text-color-secondary: #6b7280; /* Texto secundario */
   
   /* Bordes */
-  --border-color: #e5e7eb;         /* Color de bordes */
+  --border-color: #000000;         /* Color de bordes */
   --border-radius: 0.5rem;         /* Radio de borde (8px) */
   --border-radius-sm: 0.375rem;    /* Radio pequeño (6px) */
   --border-radius-lg: 0.75rem;     /* Radio grande (12px) */
@@ -76,6 +76,7 @@
   background: var(--primary-color);
   border-color: var(--primary-color);
   color: var(--primary-color-text);
+  border-radius: 1rem;
 }
 
 .p-button.p-button-primary:hover {
@@ -99,7 +100,8 @@
 .p-button.p-button-danger {
   background: var(--danger-color);
   border-color: var(--danger-color);
-  color: white;
+  color: rgb(255, 255, 255);
+  border-radius: 1rem;
 }
 
 .p-button.p-button-danger:hover {
@@ -231,7 +233,7 @@
 /* 6️⃣ DIALOG - Modales */
 .p-dialog {
   background: var(--surface-card);
-  border: none;
+  border: 2px solid var(--border-color);
   border-radius: var(--border-radius-lg);   /* 🔥 Redondeo de modales */
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
@@ -250,9 +252,11 @@
 
 .p-dialog .p-dialog-content {
   padding: 1.75rem;
+  background: var(--color-green-100);
 }
 
 .p-dialog .p-dialog-footer {
+  background: var(--color-green-50);
   padding: 1.25rem 1.75rem;
   border-top: 2px solid var(--border-color);
   border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
