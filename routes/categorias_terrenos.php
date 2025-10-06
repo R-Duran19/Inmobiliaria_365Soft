@@ -5,6 +5,10 @@ use App\Http\Controllers\CategoriaTerrenoController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('categorias_terrenos', [CategoriaTerrenoController::class, 'index'])->name('categorias_terrenos.index');
+    Route::get('categorias_terrenos', [CategoriaTerrenoController::class, 'index'])->name('categorias_terrenos.index');
+    Route::post('categorias/importar', [CategoriaTerrenoController::class, 'importar'])->name('categorias.importar');
+    Route::get('categorias/plantilla', [CategoriaTerrenoController::class, 'descargarPlantilla'])->name('categorias.plantilla'); 
+    Route::get('categorias/exportar', [CategoriaTerrenoController::class, 'exportar'])->name('categorias.exportar');
     Route::post('categorias_terrenos', [CategoriaTerrenoController::class, 'store'])->name('categorias_terrenos.store');
     Route::put('categorias_terrenos/{id}', [CategoriaTerrenoController::class, 'update'])->name('categorias_terrenos.update');
     Route::delete('categorias_terrenos/{id}', [CategoriaTerrenoController::class, 'destroy'])->name('categorias_terrenos.destroy');

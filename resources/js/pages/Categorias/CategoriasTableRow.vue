@@ -41,17 +41,6 @@ const eliminarCategoria = async () => {
 <template>
   <tr>
     <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
-      {{ categoria.nombre }}
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
-      {{ categoria.proyecto?.nombre || '—' }}
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap">
-      <Badge :variant="categoria.estado ? 'default' : 'secondary'">
-        {{ categoria.estado ? 'Activo' : 'Inactivo' }}
-      </Badge>
-    </td>
-    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
       <div class="flex gap-2">
         <!-- Editar -->
         <Tooltip>
@@ -105,6 +94,17 @@ const eliminarCategoria = async () => {
           <TooltipContent>{{ categoria.estado ? 'Desactivar' : 'Activar' }}</TooltipContent>
         </Tooltip>
       </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
+      {{ categoria.nombre }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
+      {{ categoria.proyecto?.nombre || '—' }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+      <Badge :variant="categoria.estado ? 'default' : 'secondary'">
+        {{ categoria.estado ? 'Activo' : 'Inactivo' }}
+      </Badge>
     </td>
   </tr>
 </template>

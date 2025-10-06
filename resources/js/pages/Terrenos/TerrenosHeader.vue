@@ -73,7 +73,7 @@ const botones = [
   },
   {
     label: 'Exportar',
-    icon: 'pi pi-file-excel',
+    icon: 'pi pi-file-export',
     color: 'green',
     action: handleExport,
   },

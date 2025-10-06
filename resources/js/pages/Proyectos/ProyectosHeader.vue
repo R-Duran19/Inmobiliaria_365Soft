@@ -61,24 +61,33 @@ const importarProyectos = async () => {
     </div>
     <div class="flex gap-2 w-full sm:w-auto justify-end">
       <ProyectosFormSheet>
-        <Button variant="default" class="w-full sm:w-auto">
-          Agregar Proyecto
+        <Button
+          variant="default"
+          class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
+          @click="$emit('new')"
+        >
+          <i class="pi pi-plus"></i>
+          <span>Nuevo Proyecto</span>
         </Button>
       </ProyectosFormSheet>
       <Button
         variant="outline"
-        class="w-full sm:w-auto dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+        class="w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white flex items-center gap-2 border-green-700 hover:border-green-800 dark:bg-green-700 dark:hover:bg-green-800 dark:text-white dark:border-green-700 dark:hover:border-green-800"
+        @click="abrirDialogoImportar = true"
       >
-        Exportar
+        <i class="pi pi-file-excel"></i>
+        <span>Importar</span>
       </Button>
       <Button
         variant="outline"
-        class="w-full sm:w-auto dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-        @click="abrirDialogoImportar = true"
+        class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 border-green-600 hover:border-green-700 dark:bg-green-600 dark:hover:bg-green-700 dark:text-white dark:border-green-600 dark:hover:border-green-700"
+        @click="$emit('export')"
       >
-        Importar
+        <i class="pi pi-file-export"></i>
+        <span>Exportar</span>
       </Button>
     </div>
+
 
     <!-- Diálogo para importar -->
     <Dialog v-model:open="abrirDialogoImportar">
