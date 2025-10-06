@@ -20,7 +20,7 @@ class Terreno extends Model
         'cuota_mensual',
         'precio_venta',
         'estado',
-        'condicion',
+        'condicion'
     ];
 
     public function proyecto()
