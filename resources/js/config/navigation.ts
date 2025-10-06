@@ -1,12 +1,12 @@
-import { Folder, LayoutGrid, MapPin, Tag, LockKeyhole } from 'lucide-vue-next';
+import { Folder, MapPinned, MapPin, Tag, LockKeyhole } from 'lucide-vue-next';
 import { dashboard, proyectos, terrenos, categorias, accesos } from '@/routes';
 import type { NavItem } from '@/types';
 
 export const allMainNavItems: NavItem[] = [
   {
-    title: 'Panel de Control',
+    title: 'Mapa',
     href: dashboard().url,
-    icon: LayoutGrid,
+    icon: MapPinned,
   },
   {
     title: 'Proyectos',
