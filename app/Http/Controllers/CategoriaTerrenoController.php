@@ -118,4 +118,26 @@ class CategoriaTerrenoController extends Controller
             'data' => $proyectos
         ]);
     }
+
+    public function porProyecto($id)
+    {
+        $categorias = CategoriaTerreno::with('proyecto')
+            ->where('idproyecto', $id)
+            ->get();
+
+        if ($categorias->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Sin Categorias'
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'categorias' => $categorias
+        ]);
+    }
+
+
+
 }
