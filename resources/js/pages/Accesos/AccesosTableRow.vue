@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2, Ban, CheckCircle } from 'lucide-vue-next';
 import AccesosEditDialog from './AccesosEditDialog.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useNotification } from '@/composables/useNotification';
+import { useConfirm } from 'primevue/useconfirm';
 
 interface Role {
   id: number;
@@ -28,10 +28,8 @@ const props = defineProps<{
 }>();
 
 const showEditDialog = ref(false);
-const showToggleDialog = ref(false);
-const showDeleteDialog = ref(false);
-
 const { showSuccess, showError } = useNotification();
+const confirm = useConfirm();
 
 const getRoleBadgeVariant = (roleName: string) => {
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -48,7 +46,6 @@ const handleToggleStatus = () => {
     preserveState: true,
     only: ['usuarios'],
     onSuccess: () => {
-      showToggleDialog.value = false;
       showSuccess(
         'Estado actualizado',
         `El usuario ${props.usuario.name} ha sido ${props.usuario.estado === 1 ? 'desactivado' : 'activado'} exitosamente.`
@@ -70,7 +67,6 @@ const handleDelete = () => {
     preserveState: true,
     only: ['usuarios'],
     onSuccess: () => {
-      showDeleteDialog.value = false;
       showSuccess(
         'Usuario eliminado',
         `El usuario ${props.usuario.name} ha sido eliminado exitosamente.`
@@ -83,6 +79,30 @@ const handleDelete = () => {
         'No se pudo eliminar el usuario. Por favor, intenta nuevamente.'
       );
     }
+  });
+};
+
+const confirmToggleStatus = () => {
+  confirm.require({
+    message: `¿Estás seguro de ${props.usuario.estado === 1 ? 'desactivar' : 'activar'} a ${props.usuario.name}?`,
+    header: props.usuario.estado === 1 ? 'Desactivar Usuario' : 'Activar Usuario',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: props.usuario.estado === 1 ? 'Desactivar' : 'Activar',
+    rejectLabel: 'Cancelar',
+    acceptClass: props.usuario.estado === 1 ? 'p-button-danger' : 'p-button-success',
+    accept: handleToggleStatus
+  });
+};
+
+const confirmDelete = () => {
+  confirm.require({
+    message: `¿Estás seguro de eliminar al usuario ${props.usuario.name}? Esta acción no se puede deshacer.`,
+    header: 'Eliminar Usuario',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'Eliminar',
+    rejectLabel: 'Cancelar',
+    acceptClass: 'p-button-danger',
+    accept: handleDelete
   });
 };
 
@@ -129,37 +149,36 @@ const formatDate = (dateString: string) => {
 
     <td class="px-6 py-4 whitespace-nowrap">
       <div class="flex items-center gap-2">
-        <Button variant="ghost" size="icon" @click="showToggleDialog = true"
-          :title="usuario.estado === 1 ? 'Desactivar' : 'Activar'">
+        <!-- Botón activar/desactivar -->
+        <Button
+          variant="ghost"
+          size="icon"
+          :title="usuario.estado === 1 ? 'Desactivar' : 'Activar'"
+          @click="confirmToggleStatus"
+        >
           <Ban v-if="usuario.estado === 1" class="h-4 w-4 text-orange-600" />
           <CheckCircle v-else class="h-4 w-4 text-green-600" />
         </Button>
 
+        <!-- Botón editar -->
         <Button variant="ghost" size="icon" @click="showEditDialog = true" title="Editar">
           <Pencil class="h-4 w-4 text-blue-600" />
         </Button>
 
-        <Button variant="ghost" size="icon" @click="showDeleteDialog = true" title="Eliminar">
+        <!-- Botón eliminar -->
+        <Button variant="ghost" size="icon" @click="confirmDelete" title="Eliminar">
           <Trash2 class="h-4 w-4 text-red-600" />
         </Button>
       </div>
     </td>
 
     <!-- Dialog para editar -->
-    <AccesosEditDialog v-if="showEditDialog" :open="showEditDialog" :usuario="usuario" :roles="roles"
-      @update:open="showEditDialog = $event" />
-
-    <!-- Dialog para toggle status -->
-    <ConfirmDialog :open="showToggleDialog" :title="usuario.estado === 1 ? 'Desactivar Usuario' : 'Activar Usuario'"
-      :description="`¿Estás seguro de ${usuario.estado === 1 ? 'desactivar' : 'activar'} a ${usuario.name}? ${usuario.estado === 1 ? 'El usuario no podrá acceder al sistema.' : 'El usuario podrá acceder al sistema nuevamente.'}`"
-      :confirm-text="usuario.estado === 1 ? 'Desactivar' : 'Activar'" cancel-text="Cancelar"
-      :variant="usuario.estado === 1 ? 'destructive' : 'default'" @update:open="showToggleDialog = $event"
-      @confirm="handleToggleStatus" />
-
-    <!-- Dialog para eliminar -->
-    <ConfirmDialog :open="showDeleteDialog" title="Eliminar Usuario"
-      :description="`¿Estás seguro de eliminar al usuario ${usuario.name}? Esta acción no se puede deshacer y todos los datos asociados se perderán permanentemente.`"
-      confirm-text="Eliminar" cancel-text="Cancelar" variant="destructive" @update:open="showDeleteDialog = $event"
-      @confirm="handleDelete" />
+    <AccesosEditDialog
+      v-if="showEditDialog"
+      :open="showEditDialog"
+      :usuario="usuario"
+      :roles="roles"
+      @update:open="showEditDialog = $event"
+    />
   </tr>
 </template>

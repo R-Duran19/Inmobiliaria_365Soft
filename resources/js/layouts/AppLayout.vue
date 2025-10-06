@@ -2,7 +2,7 @@
 import AppSidebarLayout from '@/layouts/app/AppHeaderLayout.vue';
 import type { BreadcrumbItemType } from '@/types';
 import Toast from 'primevue/toast';
-
+import ConfirmDialog from 'primevue/confirmdialog'
 interface Props {
     breadcrumbs?: BreadcrumbItemType[];
 }
@@ -14,6 +14,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
     <Toast position="top-right" />
+    <ConfirmDialog />
     <AppSidebarLayout :breadcrumbs="breadcrumbs">
         <slot />
     </AppSidebarLayout>
