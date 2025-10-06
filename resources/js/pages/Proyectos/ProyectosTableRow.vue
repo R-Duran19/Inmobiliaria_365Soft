@@ -25,6 +25,7 @@ const emit = defineEmits(['refresh']);
 
 const editDialogOpen = ref(false);
 const fotoDialogOpen = ref(false);
+const imageError = ref(false);
 
 const eliminarProyecto = async () => {
   if (confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
@@ -49,7 +50,6 @@ const toggleEstado = async () => {
   }
 };
 
-const imageError = ref(false);
 
 const getImageUrl = (fotografia) => {
   if (!fotografia) return null;
