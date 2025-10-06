@@ -20,3 +20,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::patch('/{proyecto}/desactivar', [ProyectoController::class, 'desactivar'])->name('desactivar');
         Route::patch('/{proyecto}/activar', [ProyectoController::class, 'activar'])->name('activar');
 });
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->get('/api/proyectos', [ProyectoController::class, 'apiIndex']);
