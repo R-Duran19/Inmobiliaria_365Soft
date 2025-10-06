@@ -154,7 +154,7 @@ class ProyectoController extends Controller
         $sheet->setCellValue('C1', 'Fecha de Lanzamiento');
         $sheet->setCellValue('D1', 'Número de Lotes');
         $sheet->setCellValue('E1', 'Ubicación');
-        $sheet->setCellValue('F1', 'Estado (1=Activo, 0=Inactivo)');
+        $sheet->setCellValue('F1', 'Estado (Activo/Inactivo)');
 
         $headerStyle = [
             'font' => [
@@ -203,18 +203,23 @@ class ProyectoController extends Controller
         ]);
 
         $file = $request->file('archivo');
-        $spreadsheet = IOFactory::load($file->getPathname());
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
         $sheet = $spreadsheet->getActiveSheet();
-
         $proyectos = [];
+
         foreach ($sheet->getRowIterator(2) as $row) {
             $cellIterator = $row->getCellIterator();
             $cellIterator->setIterateOnlyExistingCells(false);
-
             $cells = [];
             foreach ($cellIterator as $cell) {
                 $cells[] = $cell->getValue();
             }
+
+            if (empty($cells[0])) {
+                continue; 
+            }
+
+            $estado = strtolower(trim($cells[5] ?? '')) === 'activo' ? true : false;
 
             $fechaLanzamiento = null;
             if (!empty($cells[2])) {
@@ -225,13 +230,18 @@ class ProyectoController extends Controller
                 }
             }
 
+            $numeroLotes = null;
+            if (!empty($cells[3]) && is_numeric($cells[3])) {
+                $numeroLotes = (int)$cells[3];
+            }
+
             $proyectos[] = [
                 'nombre' => $cells[0] ?? 'Sin nombre',
                 'descripcion' => $cells[1] ?? null,
                 'fecha_lanzamiento' => $fechaLanzamiento,
-                'numero_lotes' => $cells[3] ?? null,
+                'numero_lotes' => $numeroLotes,
                 'ubicacion' => $cells[4] ?? null,
-                'estado' => !empty($cells[5]) ? true : false,
+                'estado' => $estado,
             ];
         }
 
@@ -247,8 +257,53 @@ class ProyectoController extends Controller
 
     public function exportar()
     {
-        // Implementar lógica de exportación
-        return response()->json(['message' => 'Funcionalidad de exportación en desarrollo.']);
+        $proyectos = Proyecto::all();
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'Nombre');
+        $sheet->setCellValue('B1', 'Descripción');
+        $sheet->setCellValue('C1', 'Fecha de Lanzamiento');
+        $sheet->setCellValue('D1', 'Número de Lotes');
+        $sheet->setCellValue('E1', 'Ubicación');
+        $sheet->setCellValue('F1', 'Estado');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'size' => 12],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFD9D9D9']],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['argb' => 'FF000000']]],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ];
+        $sheet->getStyle('A1:F1')->applyFromArray($headerStyle);
+
+        $row = 2;
+        foreach ($proyectos as $proyecto) {
+            $sheet->setCellValue('A' . $row, $proyecto->nombre);
+            $sheet->setCellValue('B' . $row, $proyecto->descripcion);
+            $sheet->setCellValue('C' . $row, $proyecto->fecha_lanzamiento);
+            $sheet->setCellValue('D' . $row, $proyecto->numero_lotes);
+            $sheet->setCellValue('E' . $row, $proyecto->ubicacion);
+            $sheet->setCellValue('F' . $row, $proyecto->estado ? 'Activo' : 'Inactivo');
+            $row++;
+        }
+
+        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(30);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(30);
+        $sheet->getColumnDimension('F')->setWidth(15);
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = 'proyectos_exportados_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
     }
 
     public function apiIndex()

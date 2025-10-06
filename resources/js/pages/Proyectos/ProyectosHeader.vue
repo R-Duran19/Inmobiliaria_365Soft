@@ -48,6 +48,23 @@ const importarProyectos = async () => {
     alert('Error al importar proyectos. Revisa la consola para más detalles.');
   }
 };
+
+const exportarProyectos = async () => {
+  try {
+    const response = await axios.get('/proyectos/exportar', {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'proyectos_exportados.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error(error);
+  }
+};
 </script>
 
 <template>
@@ -81,7 +98,7 @@ const importarProyectos = async () => {
       <Button
         variant="outline"
         class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 border-green-600 hover:border-green-700 dark:bg-green-600 dark:hover:bg-green-700 dark:text-white dark:border-green-600 dark:hover:border-green-700"
-        @click="$emit('export')"
+        @click="exportarProyectos"
       >
         <i class="pi pi-file-export"></i>
         <span>Exportar</span>

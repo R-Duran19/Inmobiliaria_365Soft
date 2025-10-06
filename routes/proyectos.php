@@ -13,7 +13,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->group(function () {
         Route::post('/', [ProyectoController::class, 'store'])->name('store');
         Route::post('/importar', [ProyectoController::class, 'importar'])->name('importar');
-        Route::get('/exportar', [ProyectoController::class, 'exportar'])->name('exportar');
+        Route::get('/exportar', [ProyectoController::class, 'exportar'])->name('proyectos.exportar');
         Route::get('/plantilla', [ProyectoController::class, 'descargarPlantilla'])->name('proyectos.plantilla');
         Route::match(['put', 'post'], '/{proyecto}', [ProyectoController::class, 'update'])->name('update');
         Route::delete('/{proyecto}', [ProyectoController::class, 'destroy'])->name('destroy');
