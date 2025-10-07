@@ -8,6 +8,7 @@ const props = defineProps<{
   categoria: {
     id: number;
     nombre: string;
+    color: string;
     idproyecto: number | null;
     estado: boolean;
     proyecto?: { id: number; nombre: string };
@@ -97,6 +98,14 @@ const eliminarCategoria = async () => {
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
       {{ categoria.nombre }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+      <Tooltip>
+        <TooltipTrigger>
+          <div class="w-6 h-6 rounded-full ml-2" :style="{ backgroundColor: categoria.color }"></div>
+        </TooltipTrigger>
+        <TooltipContent>{{ categoria.color }}</TooltipContent>
+      </Tooltip>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
       {{ categoria.proyecto?.nombre || '—' }}

@@ -32,6 +32,7 @@ class CategoriaTerrenoController extends Controller
             'nombre' => 'required|string|max:255',
             'idproyecto' => 'required|exists:proyectos,id',
             'estado' => 'sometimes|boolean',
+            'color' => 'required|string|regex:/^#[a-fA-F0-9]{6}$/',
         ]);
 
         // Crear la nueva categoría
@@ -39,6 +40,7 @@ class CategoriaTerrenoController extends Controller
             'nombre' => $request->nombre,
             'idproyecto' => $request->idproyecto,
             'estado' => $request->estado ?? true,
+            'color' => $request->color,
         ]);
 
         // Retornar respuesta JSON
@@ -59,6 +61,7 @@ class CategoriaTerrenoController extends Controller
             'nombre' => 'required|string|max:255',
             'idproyecto' => 'required|exists:proyectos,id',
             'estado' => 'sometimes|boolean',
+            'color' => 'required|string|regex:/^#[a-fA-F0-9]{6}$/',
         ]);
 
         // Actualizar los campos
@@ -66,6 +69,7 @@ class CategoriaTerrenoController extends Controller
             'nombre' => $request->nombre,
             'idproyecto' => $request->idproyecto,
             'estado' => $request->estado ?? $categoria->estado,
+            'color' => $request->color,
         ]);
 
         // Retornar respuesta JSON
@@ -150,9 +154,10 @@ class CategoriaTerrenoController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue('A1', 'Nombre de la Categoría');
+        $sheet->setCellValue('A1', 'Nombre de la Categoría');      
         $sheet->setCellValue('B1', 'Nombre del Proyecto (debe existir en la tabla proyectos)');
         $sheet->setCellValue('C1', 'Estado (Activo/Inactivo)');
+        $sheet->setCellValue('D1', 'Color (hexadecimal, ej: #FF0000)');
 
         $headerStyle = [
             'font' => ['bold' => true, 'size' => 12],
@@ -160,10 +165,11 @@ class CategoriaTerrenoController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF000000']]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ];
-        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:D1')->applyFromArray($headerStyle);
         $sheet->getColumnDimension('A')->setWidth(25);
         $sheet->getColumnDimension('B')->setWidth(55);
         $sheet->getColumnDimension('C')->setWidth(30);
+        $sheet->getColumnDimension('D')->setWidth(40);
 
         $writer = new Xlsx($spreadsheet);
         $filename = 'plantilla_categorias.xlsx';
@@ -184,8 +190,9 @@ class CategoriaTerrenoController extends Controller
         $spreadsheet = IOFactory::load($file->getPathname());
         $sheet = $spreadsheet->getActiveSheet();
         $categorias = [];
+        $errores = [];
 
-        foreach ($sheet->getRowIterator(2) as $row) {
+        foreach ($sheet->getRowIterator(2) as $rowIndex => $row) {
             $cellIterator = $row->getCellIterator();
             $cellIterator->setIterateOnlyExistingCells(false);
             $cells = [];
@@ -196,7 +203,6 @@ class CategoriaTerrenoController extends Controller
             // Buscar el proyecto por nombre
             $nombreProyecto = $cells[1] ?? null;
             $proyecto = Proyecto::where('nombre', $nombreProyecto)->first();
-
             if (!$proyecto) {
                 return response()->json([
                     'success' => false,
@@ -206,10 +212,18 @@ class CategoriaTerrenoController extends Controller
 
             $estado = strtolower($cells[2] ?? '') === 'activo' ? true : false;
 
+            // Validar el formato del color hexadecimal
+            $color = $cells[3] ?? '#000000';
+            if (!preg_match('/^#[a-fA-F0-9]{6}$/', $color)) {
+                $errores[] = "Fila " . ($rowIndex + 1) . ": El formato del color '{$color}' no es válido. Debe ser un código hexadecimal de 6 dígitos (ej: #FF0000). Se reemplazó por #000000.";
+                $color = '#000000'; // Valor por defecto
+            }
+
             $categorias[] = [
                 'nombre' => $cells[0] ?? 'Sin nombre',
                 'idproyecto' => $proyecto->id,
                 'estado' => $estado,
+                'color' => $color,
             ];
         }
 
@@ -220,19 +234,26 @@ class CategoriaTerrenoController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Categorías importadas correctamente.',
+            'errores' => $errores, 
         ]);
+    }
+
+    private function hexToArgb($hexColor)
+    {
+        $hexColor = ltrim($hexColor, '#');
+        return 'FF' . $hexColor;
     }
 
     public function exportar()
     {
         $categorias = CategoriaTerreno::with('proyecto')->get();
-
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         $sheet->setCellValue('A1', 'Nombre de la Categoría');
         $sheet->setCellValue('B1', 'Nombre del Proyecto');
         $sheet->setCellValue('C1', 'Estado');
+        $sheet->setCellValue('D1', 'Color');
 
         $headerStyle = [
             'font' => ['bold' => true, 'size' => 12],
@@ -240,19 +261,29 @@ class CategoriaTerrenoController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF000000']]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ];
-        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:D1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($categorias as $categoria) {
             $sheet->setCellValue('A' . $row, $categoria->nombre);
             $sheet->setCellValue('B' . $row, $categoria->proyecto->nombre);
             $sheet->setCellValue('C' . $row, $categoria->estado ? 'Activo' : 'Inactivo');
+            $sheet->setCellValue('D' . $row, $categoria->color);
+
+            $sheet->getStyle('D' . $row)->applyFromArray([
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => $this->hexToArgb($categoria->color)]
+                ]
+            ]);
+
             $row++;
         }
 
         $sheet->getColumnDimension('A')->setWidth(25);
-        $sheet->getColumnDimension('B')->setWidth(35);
-        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('B')->setWidth(25);
+        $sheet->getColumnDimension('C')->setWidth(35);
+        $sheet->getColumnDimension('D')->setWidth(20);
 
         $writer = new Xlsx($spreadsheet);
         $filename = 'categorias_' . date('Ymd_His') . '.xlsx';

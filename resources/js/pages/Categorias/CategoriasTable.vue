@@ -6,6 +6,7 @@ defineProps<{
   categorias: Array<{
     id: number;
     nombre: string;
+    color: string;
     idproyecto: number | null;
     estado: boolean;
     proyecto?: { id: number; nombre: string };
@@ -23,6 +24,7 @@ defineEmits(['refresh', 'edit']);
         <tr>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Color</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Proyecto</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Estado</th>
         </tr>
@@ -52,7 +54,7 @@ defineEmits(['refresh', 'edit']);
       </tbody>
       <tfoot class="bg-gray-50 dark:bg-gray-700">
         <tr>
-          <td colspan="4" class="px-6 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">
+          <td colspan="5" class="px-6 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">
             <div v-if="!loading && categorias.length > 0">
               Mostrando {{ categorias.length }} categorías
             </div>

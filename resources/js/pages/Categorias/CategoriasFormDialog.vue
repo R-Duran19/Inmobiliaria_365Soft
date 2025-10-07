@@ -11,6 +11,7 @@ const props = defineProps<{
   categoria?: {
     id: number;
     nombre: string;
+    color: string;
     idproyecto: number | null;
     estado: boolean;
     proyecto?: { id: number; nombre: string };
@@ -24,6 +25,7 @@ const form = ref({
   nombre: '',
   idproyecto: null as number | null,
   estado: true,
+  color: '#000000',
 });
 
 const proyectos = ref<Array<{ id: number; nombre: string }>>([]);
@@ -40,9 +42,18 @@ const cargarProyectos = async () => {
 
 watch(() => props.open, (isOpen) => {
   if (isOpen && props.categoria) {
-    form.value = { ...props.categoria };
+    form.value = {
+      ...props.categoria,
+      color: props.categoria.color || '#000000' // Valor por defecto si no existe
+    };
   } else if (isOpen) {
-    form.value = { id: null, nombre: '', idproyecto: null, estado: true };
+    form.value = {
+      id: null,
+      nombre: '',
+      idproyecto: null,
+      estado: true,
+      color: '#000000' // Valor por defecto
+    };
   }
 });
 
@@ -88,6 +99,16 @@ onMounted(cargarProyectos);
         <div class="space-y-2">
           <Label for="nombre">Nombre de la Categoría *</Label>
           <Input id="nombre" v-model="form.nombre" required />
+        </div>
+        <div class="space-y-2">
+          <Label for="color">Color *</Label>
+          <Input
+            id="color"
+            type="color"
+            v-model="form.color"
+            required
+            class="w-full h-10 p-1 border rounded-md dark:bg-gray-800 dark:border-gray-700"
+          />
         </div>
         <div class="space-y-2">
           <Label for="idproyecto">Proyecto *</Label>
