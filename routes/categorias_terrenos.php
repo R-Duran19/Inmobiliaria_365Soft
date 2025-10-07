@@ -1,21 +1,26 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CategoriaTerrenoController;
+use App\Http\Controllers\DocumentoTerrenoController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('categorias_terrenos', [CategoriaTerrenoController::class, 'index'])->name('categorias_terrenos.index');
-    Route::get('categorias_terrenos', [CategoriaTerrenoController::class, 'index'])->name('categorias_terrenos.index');
-    Route::post('categorias/importar', [CategoriaTerrenoController::class, 'importar'])->name('categorias.importar');
-    Route::get('categorias/plantilla', [CategoriaTerrenoController::class, 'descargarPlantilla'])->name('categorias.plantilla'); 
-    Route::get('categorias/exportar', [CategoriaTerrenoController::class, 'exportar'])->name('categorias.exportar');
-    Route::post('categorias_terrenos', [CategoriaTerrenoController::class, 'store'])->name('categorias_terrenos.store');
-    Route::put('categorias_terrenos/{id}', [CategoriaTerrenoController::class, 'update'])->name('categorias_terrenos.update');
-    Route::delete('categorias_terrenos/{id}', [CategoriaTerrenoController::class, 'destroy'])->name('categorias_terrenos.destroy');
-    Route::patch('categorias_terrenos/desactivar/{id}', [CategoriaTerrenoController::class, 'desactivar'])->name('categorias_terrenos.desactivar');
-    Route::patch('categorias_terrenos/activar/{id}', [CategoriaTerrenoController::class, 'activar'])->name('categorias_terrenos.activar');
-    Route::get('categorias_terrenos/proyectos', [CategoriaTerrenoController::class, 'proyectos'])->name('categorias_terrenos.proyectos');
-    Route::get('categorias_terrenos/proyecto/{id}', [CategoriaTerrenoController::class, 'porProyecto'])
-    ->name('categorias_terrenos.porProyecto');
-});
+    // Listar documentos de un terreno específico
+    Route::get('documentos_terreno/terreno/{id}', [DocumentoTerrenoController::class, 'index'])
+        ->name('documentos_terreno.index');
 
+    // Subir/crear un nuevo documento
+    Route::post('documentos_terreno', [DocumentoTerrenoController::class, 'store'])
+        ->name('documentos_terreno.store');
+
+    // Descargar un documento específico (opcional, si quieres manejar descargas)
+    Route::get('documentos_terreno/descargar/{id}', [DocumentoTerrenoController::class, 'descargar'])
+        ->name('documentos_terreno.descargar');
+
+    // Eliminar un documento
+    Route::delete('documentos_terreno/{id}', [DocumentoTerrenoController::class, 'destroy'])
+        ->name('documentos_terreno.destroy');
+
+    // Exportar todos los documentos de un terreno (opcional)
+    Route::get('documentos_terreno/exportar/{id}', [DocumentoTerrenoController::class, 'exportar'])
+        ->name('documentos_terreno.exportar');
+});
