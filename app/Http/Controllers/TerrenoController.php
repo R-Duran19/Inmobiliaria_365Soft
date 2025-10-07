@@ -10,7 +10,7 @@ use MatanYadaev\EloquentSpatial\Objects\LineString;
 use MatanYadaev\EloquentSpatial\Objects\Polygon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\TerrenosExport;
+use App\Http\Exports\TerrenosExport;
 
 class TerrenoController extends Controller
 {
@@ -105,18 +105,34 @@ class TerrenoController extends Controller
     }
 
     
-    public function export(Request $request)
+    public function export($idproyecto)
     {
-        $format = $request->get('format', 'excel');
+        $terrenos = \App\Models\Terreno::where('idproyecto', $idproyecto)
+            ->with('proyecto')
+            ->get();
 
-        if ($format === 'pdf') {
-            $terrenos = Terreno::all();
-            $pdf = Pdf::loadView('exports.terrenos', compact('terrenos'));
-            return $pdf->download('terrenos.pdf');
+        if ($terrenos->isEmpty()) {
+            return response()->json(['message' => 'No hay terrenos para exportar.'], 404);
         }
 
-        return Excel::download(new TerrenosExport, 'terrenos.xlsx');
+        $export = new \App\Http\Exports\TerrenosExport($terrenos);
+        $spreadsheet = $export->export();
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = 'terrenos_exportados_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
     }
+
+
+
+
+
 
     public function getTerrenos(Request $request)
     {

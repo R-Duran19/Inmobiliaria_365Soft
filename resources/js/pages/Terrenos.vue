@@ -143,9 +143,6 @@ function mostrarTerrenos() {
             <TerrenosHeader
                 v-model:search="search"
                 @created="guardarTerreno"
-                @export="
-                    () => mostrarNotificacion('success', 'Terrenos exportados')
-                "
             />
 
             <CostosDrawer
