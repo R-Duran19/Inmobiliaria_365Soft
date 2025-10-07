@@ -41,7 +41,7 @@ const mostrarToast = (severity: ToastSeverity, message: string) => {
 };
 
 const importarCategorias = async () => {
-  if (!archivoSeleccionado.value){ 
+  if (!archivoSeleccionado.value) {
     mostrarToast('error', 'Selecciona un archivo para importar.');
     return;
   }
@@ -55,9 +55,16 @@ const importarCategorias = async () => {
       },
     });
     if (response.data.success) {
-      window.dispatchEvent(new CustomEvent('categorias-importadas'));
-      mostrarToast('success', 'Categorías importadas correctamente.');
+      mostrarToast('success', response.data.message);
+      if (response.data.errores && response.data.errores.length > 0) {
+        response.data.errores.forEach((error: string) => {
+          mostrarToast('warn', error);
+        });
+      }
       abrirDialogoImportar.value = false;
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
     } else {
       mostrarToast('error', response.data.message);
     }

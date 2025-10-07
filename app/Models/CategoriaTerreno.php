@@ -10,7 +10,7 @@ class CategoriaTerreno extends Model
 
     protected $table = 'categorias_terrenos';
 
-    protected $fillable = ['nombre', 'idproyecto', 'estado'];
+   protected $fillable = ['nombre', 'idproyecto', 'estado', 'color'];
 
     public function proyecto()
     {
