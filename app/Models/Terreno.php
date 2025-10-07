@@ -3,13 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 
 class Terreno extends Model
 {
-    use HasFactory;
-
-    protected $table = 'terrenos';
+    use HasSpatial;
 
     protected $fillable = [
         'idproyecto',
@@ -20,11 +19,32 @@ class Terreno extends Model
         'cuota_mensual',
         'precio_venta',
         'estado',
-        'condicion'
+        'condicion',
+        'poligono',
+        'observaciones',
     ];
 
+    protected $casts = [
+        'cuota_inicial' => 'decimal:2',
+        'cuota_mensual' => 'decimal:2',
+        'precio_venta' => 'decimal:2',
+        'condicion' => 'boolean',
+        'poligono' => Polygon::class, // Convierte automáticamente a objeto Polygon
+    ];
+
+    // Relación con proyecto
     public function proyecto()
     {
         return $this->belongsTo(Proyecto::class, 'idproyecto');
+    }
+
+    // Accessor para obtener el polígono como GeoJSON
+    public function getPoligonoGeojsonAttribute()
+    {
+        if (!$this->poligono) {
+            return null;
+        }
+
+        return json_decode($this->poligono->toJson());
     }
 }

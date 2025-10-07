@@ -5,23 +5,29 @@ use App\Models\Terreno;
 use App\Models\Proyecto;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use MatanYadaev\EloquentSpatial\Objects\Point;
+use MatanYadaev\EloquentSpatial\Objects\LineString;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TerrenosExport;
 
 class TerrenoController extends Controller
 {
     
-   public function index(Request $request)
-{
-    $query = Terreno::with('proyecto'); // 👈 aquí ya trae el proyecto relacionado
+    public function index(Request $request)
+    {
+        $query = Terreno::with('proyecto');
 
-    if ($request->has('ubicacion')) {
-        $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
-    }
+        if ($request->has('ubicacion')) {
+            $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
+        }
 
-    if ($request->has('idproyecto')) {
-        $query->where('idproyecto', $request->idproyecto);
-    }
+        if ($request->has('idproyecto')) {
+            $query->where('idproyecto', $request->idproyecto);
+        }
 
-    $terrenos = $query->get();
+        $terrenos = $query->get();
 
     return Inertia::render('Terrenos', [
         'terrenos' => $terrenos,
@@ -34,7 +40,21 @@ class TerrenoController extends Controller
     
     public function store(Request $request)
     {
-        $terreno = Terreno::create($request->all());
+        $data = $request->all();        
+        if (isset($data['poligono_geojson'])) {
+            $coordinates = $data['poligono_geojson']['coordinates'][0];
+            $points = array_map(function($coord) {
+                return new Point($coord[1], $coord[0]);
+            }, $coordinates);
+            
+            $data['poligono'] = new Polygon([
+                new LineString($points)
+            ]);
+            
+            unset($data['poligono_geojson']);
+        }
+        
+        $terreno = Terreno::create($data);
         $terreno->load('proyecto');
         return response()->json($terreno, 201);
     }
@@ -43,7 +63,22 @@ class TerrenoController extends Controller
     public function update(Request $request, $id)
     {
         $terreno = Terreno::findOrFail($id);
-        $terreno->update($request->all());
+        $data = $request->all();
+        
+        if (isset($data['poligono_geojson'])) {
+            $coordinates = $data['poligono_geojson']['coordinates'][0];
+            $points = array_map(function($coord) {
+                return new Point($coord[0], $coord[1]);
+            }, $coordinates);
+            
+            $data['poligono'] = new Polygon([
+                new LineString($points)
+            ]);
+            
+            unset($data['poligono_geojson']);
+        }
+        
+        $terreno->update($data);
         $terreno->load('proyecto');
         return response()->json($terreno);
     }
@@ -85,7 +120,7 @@ class TerrenoController extends Controller
 
     public function getTerrenos(Request $request)
     {
-        $query = Terreno::with('proyecto'); // trae la relación con proyecto
+        $query = Terreno::with('proyecto');
 
         if ($request->has('ubicacion')) {
             $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');

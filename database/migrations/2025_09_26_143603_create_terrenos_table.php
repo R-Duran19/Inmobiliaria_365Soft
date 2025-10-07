@@ -18,7 +18,8 @@ return new class extends Migration
             $table->decimal('cuota_mensual', 10, 2);
             $table->decimal('precio_venta', 10, 2);
             $table->integer('estado')->default(0); 
-            $table->boolean('condicion')->default(true);
+            $table->boolean('condicion')->default(true);            
+            $table->geometry('poligono', 'polygon')->nullable();            
             $table->timestamps();
 
             $table->foreign('idproyecto')->references('id')->on('proyectos')->onDelete('cascade');

@@ -27,4 +27,27 @@ class Proyecto extends Model
     protected $attributes = [
         'estado' => true, 
     ];
+    public function terrenos()
+    {
+        return $this->hasMany(Terreno::class, 'idproyecto');
+    }
+
+    /**
+     * Terrenos disponibles
+     */
+    public function terrenosDisponibles()
+    {
+        return $this->hasMany(Terreno::class, 'idproyecto')
+            ->where('estado', 0)
+            ->where('condicion', true);
+    }
+
+    /**
+     * Terrenos vendidos
+     */
+    public function terrenosVendidos()
+    {
+        return $this->hasMany(Terreno::class, 'idproyecto')
+            ->where('estado', 1);
+    }
 }
