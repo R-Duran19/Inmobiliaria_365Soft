@@ -17,6 +17,7 @@ const categoriasData = ref<Array<{
   nombre: string;
   idproyecto: number | null;
   estado: boolean;
+  color: string; 
   proyecto?: { id: number; nombre: string };
 }>>([]);
 
@@ -28,6 +29,7 @@ const categoriaActual = ref<{
   nombre: string;
   idproyecto: number | null;
   estado: boolean;
+  color: string; 
   proyecto?: { id: number; nombre: string };
 } | null>(null);
 
@@ -55,6 +57,7 @@ const handleEdit = (categoria: {
   nombre: string;
   idproyecto: number | null;
   estado: boolean;
+  color: string; 
   proyecto?: { id: number; nombre: string };
 }) => {
   categoriaActual.value = categoria;
