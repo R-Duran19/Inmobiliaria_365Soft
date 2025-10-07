@@ -24,7 +24,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     //VISTAS INERTIA
     Route::get('terrenos', fn() => Inertia::render('Terrenos'))->name('terrenos');
     Route::get('categorias', fn() => Inertia::render('Categorias'))->name('categorias');
-    
 });
 
 // Archivos de rutas adicionales
@@ -35,4 +34,3 @@ require __DIR__ . '/accesos.php';
 require __DIR__ . '/proyectos.php';
 require __DIR__ . '/terrenos.php';
 require __DIR__ . '/mapas.php';
-require __DIR__.'/documentos.php';
