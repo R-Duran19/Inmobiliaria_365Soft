@@ -8,4 +8,5 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->group(function () {
         Route::get('barrio/{idbarrio}', [CuadraController::class, 'getCuadrasPorBarrio'])->name('barrio');
         Route::get('all', [CuadraController::class, 'getAllCuadras'])->name('all');
+        Route::post('postCuadras', [CuadraController::class, 'postCuadras']);
     });
