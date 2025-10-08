@@ -17,7 +17,11 @@ class TerrenoController extends Controller
     
     public function index(Request $request)
     {
-        $query = Terreno::with('proyecto');
+        $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion') 
+        ->with([
+            'proyecto:id,nombre',           
+            'categorias_terrenos:id,nombre' 
+        ]);
 
         if ($request->has('ubicacion')) {
             $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
@@ -27,11 +31,18 @@ class TerrenoController extends Controller
             $query->where('idproyecto', $request->idproyecto);
         }
 
+        if ($request->has('idcategoria')) {
+            $query->where('idcategoria', $request->idcategoria);
+        }
+
         $terrenos = $query->get();
 
     return Inertia::render('Terrenos', [
         'terrenos' => $terrenos,
     ]);
+    // return response()->json([
+    //     'terrenos' => $terrenos,
+    // ]);
 
 }
 
@@ -40,48 +51,74 @@ class TerrenoController extends Controller
     
     public function store(Request $request)
     {
-        $data = $request->all();        
+   
+        $data = $request->validate([
+            'idproyecto' => 'required|exists:proyectos,id',
+            'idcategoria' => 'required|exists:categorias_terrenos,id',
+            'ubicacion' => 'required|string|max:255',
+            'superficie' => 'required|string|max:255',
+            'cuota_inicial' => 'required|numeric',
+            'cuota_mensual' => 'required|numeric',
+            'precio_venta' => 'required|numeric',
+            'estado' => 'nullable|integer',
+            'condicion' => 'nullable|boolean',
+            'poligono_geojson' => 'nullable|array',
+        ]);
+
+        // Convertir GeoJSON a Polygon si viene
         if (isset($data['poligono_geojson'])) {
             $coordinates = $data['poligono_geojson']['coordinates'][0];
-            $points = array_map(function($coord) {
-                return new Point($coord[1], $coord[0]);
-            }, $coordinates);
-            
-            $data['poligono'] = new Polygon([
-                new LineString($points)
-            ]);
-            
+            $points = array_map(fn($coord) => new Point($coord[1], $coord[0]), $coordinates);
+            $data['poligono'] = new Polygon([new LineString($points)]);
             unset($data['poligono_geojson']);
         }
-        
+
+        // Crear el terreno
         $terreno = Terreno::create($data);
-        $terreno->load('proyecto');
-        return response()->json($terreno, 201);
+
+        // Cargar relaciones
+        $terreno->load(['proyecto', 'categorias_terrenos']);
+
+        return response()->json([
+            'success' => true,
+            'terreno' => $terreno,
+        ], 201);
     }
 
     
     public function update(Request $request, $id)
     {
         $terreno = Terreno::findOrFail($id);
-        $data = $request->all();
-        
+
+        $data = $request->validate([
+            'idproyecto' => 'required|exists:proyectos,id',
+            'idcategoria' => 'required|exists:categorias_terrenos,id',
+            'ubicacion' => 'required|string|max:255',
+            'superficie' => 'required|string|max:255',
+            'cuota_inicial' => 'required|numeric',
+            'cuota_mensual' => 'required|numeric',
+            'precio_venta' => 'required|numeric',
+            'estado' => 'nullable|integer',
+            'condicion' => 'nullable|boolean',
+        ]);
+
         if (isset($data['poligono_geojson'])) {
             $coordinates = $data['poligono_geojson']['coordinates'][0];
-            $points = array_map(function($coord) {
-                return new Point($coord[0], $coord[1]);
-            }, $coordinates);
-            
-            $data['poligono'] = new Polygon([
-                new LineString($points)
-            ]);
-            
+            $points = array_map(fn($coord) => new Point($coord[1], $coord[0]), $coordinates);
+            $data['poligono'] = new Polygon([new LineString($points)]);
             unset($data['poligono_geojson']);
         }
-        
+
         $terreno->update($data);
-        $terreno->load('proyecto');
-        return response()->json($terreno);
+
+        $terreno->load(['proyecto', 'categorias_terrenos']);
+
+        return response()->json([
+            'success' => true,
+            'terreno' => $terreno
+        ]);
     }
+
 
     
     public function destroy($id)
@@ -136,19 +173,32 @@ class TerrenoController extends Controller
 
     public function getTerrenos(Request $request)
     {
-        $query = Terreno::with('proyecto');
+        
+         $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion') 
+        ->with([
+        'proyecto:id,nombre',            
+        'categorias_terrenos:id,nombre'  
+    ]);
 
-        if ($request->has('ubicacion')) {
+        
+        if ($request->has('ubicacion') && $request->ubicacion) {
             $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
         }
 
-        if ($request->has('idproyecto')) {
-            $query->where('idproyecto', $request->idproyecto);
+        
+        if ($request->has('idcategoria') && $request->idcategoria) {
+            $query->where('idcategoria', $request->idcategoria);
         }
 
+        
         $terrenos = $query->get();
 
-        return response()->json($terrenos);
+        
+        return response()->json([
+            'success' => true,
+            'terrenos' => $terrenos,
+        ]);
     }
+
 
 }

@@ -16,7 +16,7 @@ class TerrenoSeeder extends Seeder
         Terreno::create([
             'idproyecto' => 1,
             'ubicacion' => 'Zona Norte',
-            'categoria' => 'Premium',
+            'idcategoria' => 1,
             'superficie' => '500 m²',
             'cuota_inicial' => 10000.00,
             'cuota_mensual' => 500.00,
@@ -51,7 +51,7 @@ class TerrenoSeeder extends Seeder
         Terreno::create([
             'idproyecto' => 1,
             'ubicacion' => 'Zona Norte',
-            'categoria' => 'Estándar',
+            'idcategoria' => 2,
             'superficie' => '150 m²',
             'cuota_inicial' => 8000.00,
             'cuota_mensual' => 400.00,
@@ -72,7 +72,7 @@ class TerrenoSeeder extends Seeder
         Terreno::create([
             'idproyecto' => 1,
             'ubicacion' => 'Zona Sur',
-            'categoria' => 'Económico',
+            'idcategoria' => 3,
             'superficie' => '80 m²',
             'cuota_inicial' => 5000.00,
             'cuota_mensual' => 300.00,
