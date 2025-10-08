@@ -15,6 +15,11 @@ const emit = defineEmits(['updated', 'deleted', 'costos']);
 
 const editarVisible = ref(false);
 
+const abrirSubidaDocumento = () => {
+    const id = props.terreno.id;
+    window.open(`/documentos/${id}`, '_blank');
+};
+
 const confirmarEliminar = () => {
     emit('deleted', props.terreno.id);
 };
@@ -87,6 +92,31 @@ function obtenerValor(obj: any, ruta: string) {
                     </TooltipTrigger>
                     <TooltipContent>Eliminar</TooltipContent>
                 </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger as-child>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            @click="abrirSubidaDocumento"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4 text-blue-500"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12V4m0 0l-4 4m4-4l4 4"
+                                />
+                            </svg>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Subir Documento</TooltipContent>
+                </Tooltip>
             </div>
         </td>
 
@@ -95,7 +125,7 @@ function obtenerValor(obj: any, ruta: string) {
             :key="campo.key"
             class="px-6 py-4 text-gray-900 dark:text-gray-100"
         >
-           {{ campo.key === 'proyecto.nombre' ? terreno.proyecto.nombre : terreno[campo.key as keyof Terreno] }}
+            {{ campo.key === 'proyecto.nombre' ? terreno.proyecto.nombre : terreno[campo.key as keyof Terreno] }}
         </td>
 
         <td>
@@ -127,10 +157,10 @@ function obtenerValor(obj: any, ruta: string) {
         </td>
     </tr>
     <EditarTerrenosDrawer
-  :visible="editarVisible"
-  :terreno="terreno"
-  @update:visible="editarVisible = $event"
-  @updated="emit('updated', $event)"
+    :visible="editarVisible"
+    :terreno="terreno"
+    @update:visible="editarVisible = $event"
+    @updated="emit('updated', $event)"
 />
 
 
