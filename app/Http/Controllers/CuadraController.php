@@ -35,4 +35,33 @@ class CuadraController extends Controller
             'cuadras' => $cuadras,
         ]);
     }
+
+    public function postCuadras(Request $request)
+    {
+        $request->validate([
+            'idbarrio' => 'required|integer|exists:barrios,id',
+            'cuadras' => 'required|array|min:1',
+            'cuadras.*' => 'string|max:255',
+        ]);
+
+        $data = [];
+
+        foreach ($request->cuadras as $nombreCuadra) {
+            $data[] = [
+                'idbarrio' => $request->idbarrio,
+                'nombre' => $nombreCuadra,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        Cuadra::insert($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cuadras registradas correctamente',
+            'cuadras' => $data,
+        ]);
+    }
+
 }
