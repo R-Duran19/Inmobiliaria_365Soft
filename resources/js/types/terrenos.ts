@@ -15,4 +15,8 @@ export interface Terreno {
     descripcion: string;
     estado: number
   }
+  categorias_terrenos:{
+    id: number,
+    nombre: string;
+  }
 }
