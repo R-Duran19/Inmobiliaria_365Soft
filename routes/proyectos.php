@@ -19,7 +19,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::delete('/{proyecto}', [ProyectoController::class, 'destroy'])->name('destroy');
         Route::patch('/{proyecto}/desactivar', [ProyectoController::class, 'desactivar'])->name('desactivar');
         Route::patch('/{proyecto}/activar', [ProyectoController::class, 'activar'])->name('activar');
+        Route::get('/ultimoId', [ProyectoController::class, 'getUltimoId']);
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])
     ->get('/api/proyectos', [ProyectoController::class, 'apiIndex']);
+
+
+    // Route::get('proyectos/ultimoId', [ProyectoController::class, 'getUltimoId']);
