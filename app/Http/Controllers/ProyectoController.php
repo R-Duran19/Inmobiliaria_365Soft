@@ -312,4 +312,16 @@ class ProyectoController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
     }
+
+    public function getUltimoId(Request $request)
+    {
+        // Obtiene el último proyecto según el ID
+        $proyecto = Proyecto::orderBy('id', 'desc')->first();
+
+        return response()->json([
+            'success' => true,
+            'UltimoProyecto' => $proyecto ? $proyecto->id : null,
+        ]);
+    }
+
 }
