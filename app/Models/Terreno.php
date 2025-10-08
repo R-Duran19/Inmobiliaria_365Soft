@@ -39,7 +39,7 @@ class Terreno extends Model
         return $this->belongsTo(Proyecto::class, 'idproyecto');
     }
 
-public function categoriaTerreno()
+public function categorias_terrenos()
 {
     return $this->belongsTo(CategoriaTerreno::class, 'idcategoria');
 }
