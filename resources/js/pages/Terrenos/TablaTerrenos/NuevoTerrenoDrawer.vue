@@ -43,6 +43,7 @@ const form = reactive({
     idcategoria: 0 as number,
     idbarrio: 0 as number, 
     idcuadra: 0 as number,
+    numero_terreno: '' as string, 
     ubicacion: '' as string,
     superficie: '' as string,
     precio_venta: null as number | null,
@@ -125,7 +126,13 @@ watch(() => form.idbarrio, (newIdBarrio) => {
 });
 
 async function guardarTerreno() {
-    emit('created', { ...form });
+    try {
+        const response = await axios.post('/terrenos', form);
+        emit('created', response.data.terreno);
+        emit('close'); 
+    } catch (error) {
+        console.error('Error al guardar el terreno:', error);
+    }
 }
 </script>
 
@@ -190,6 +197,15 @@ async function guardarTerreno() {
                     </div>
                 </div>
 
+                <div>
+                    <label class="mb-1 block font-medium">N° Terreno</label>
+                    <input
+                        v-model="form.numero_terreno"
+                        type="number"  
+                        min="1" 
+                        class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
+                    />
+                </div>
                 
                 <div>
                     <label class="mb-1 block font-medium">Categoría</label>

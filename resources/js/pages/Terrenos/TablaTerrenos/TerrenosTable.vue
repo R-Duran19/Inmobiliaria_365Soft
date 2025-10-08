@@ -8,8 +8,11 @@ const emit = defineEmits(['updated', 'deleted', 'costos']);
 const headerNames = [
     'Acciones',
     'Proyecto',
+    'N° Terreno',
     'Ubicación',
     'Categoria',
+    'Barrio',
+    'Cuadra',
     'Superficie',
     'Costos',
 ];

@@ -2,6 +2,7 @@ export interface Terreno {
   id: number;
   idproyecto: number;
   idcategoria: number;
+  numero_terreno: number; 
   ubicacion: string;
   categoria: string;
   superficie: string;
@@ -19,4 +20,12 @@ export interface Terreno {
     id: number,
     nombre: string;
   }
+  cuadra?: { 
+      id: number;
+      nombre: string;
+      barrio?: { 
+          id: number;
+          nombre: string;
+      };
+  };
 }

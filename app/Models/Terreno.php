@@ -14,6 +14,7 @@ class Terreno extends Model
         'idproyecto',
         'idcategoria',
         'idcuadra',
+        'numero_terreno', 
         'ubicacion',
         'categoria',
         'superficie',

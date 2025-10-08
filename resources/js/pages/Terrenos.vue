@@ -38,23 +38,15 @@ async function guardarTerreno(formData: any) {
         notificacion.visible = true;
         return;
     }
-
     const { data } = await axios.post('/terrenos', formData);
-
-
     terrenos.value.push(data.terreno);
-
-
     estadoDialogos.nuevoTerrenoVisible = false;
-
-
     mostrarNotificacion('success', 'Terreno guardado correctamente');
   } catch (error) {
     console.error('Error guardando terreno:', error);
     mostrarNotificacion('error', 'Error al guardar el terreno');
   }
 }
-
 
 const estadoDialogos = reactive({
     confirmacionVisible: false,
@@ -120,16 +112,10 @@ async function eliminarTerreno() {
 
 async function actualizarTerrenoEnLista() {
     try {
-        const { data } = await axios.get(
-            `api/terrenos/`,
-        );
-
-        console.log('hola aqui ', data.terrenos)
-
+        const { data } = await axios.get('api/terrenos');
         if (data.success) {
             terrenos.value = data.terrenos;
         }
-
     } catch (err) {
         console.error('Error cargando terrenos:', err);
     }

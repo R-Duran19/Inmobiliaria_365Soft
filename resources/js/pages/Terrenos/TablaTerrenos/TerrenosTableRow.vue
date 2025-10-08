@@ -12,8 +12,18 @@ import EditarTerrenosDrawer from '../EditarTerrenosDrawer.vue';
 
 const props = defineProps<{ terreno: Terreno }>();
 const emit = defineEmits(['updated', 'deleted', 'costos']);
-
 const editarVisible = ref(false);
+
+const camposTerreno = [
+    { key: 'proyecto.nombre', label: 'Proyecto' },
+    { key: 'numero_terreno', label: 'N° Terreno' }, 
+    { key: 'ubicacion', label: 'Ubicación' },
+    { key: 'categoria', label: 'Categoría' },
+    { key: 'barrio', label: 'Barrio' }, 
+    { key: 'cuadra', label: 'Cuadra' }, 
+    { key: 'superficie', label: 'Superficie' },
+];
+
 
 const abrirSubidaDocumento = () => {
     const id = props.terreno.id;
@@ -29,14 +39,6 @@ const confirmarEliminar = () => {
     emit('deleted', props.terreno.id);
 };
 
-const camposTerreno = [
-    { key: 'proyecto.nombre' },
-    { key: 'ubicacion' },
-    { key: 'categoria' },
-    
-    { key: 'superficie' },
-];
-
 function obtenerValor(obj: any, ruta: string) {
     return ruta.split('.').reduce((acc, key) => acc?.[key], obj);
 }
@@ -45,7 +47,7 @@ function obtenerValor(obj: any, ruta: string) {
 <template>
     <tr class="transition hover:bg-gray-50 dark:hover:bg-gray-700">
         <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex gap-2">
+            <div class="flex gap-1">
                 <Tooltip>
                     <TooltipTrigger as-child>
                         <Button
@@ -54,7 +56,7 @@ function obtenerValor(obj: any, ruta: string) {
                             @click="editarVisible = true"
                         >
                             <svg
-                                xmlns="http://www.w3.org/2000/svg"
+                                xmlns="http://www/w3.org/2000/svg"
                                 class="h-4 w-4 text-blue-500"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -166,7 +168,11 @@ function obtenerValor(obj: any, ruta: string) {
                     ? terreno.proyecto?.nombre ?? ''
                     : campo.key === 'categoria'
                         ? terreno.categorias_terrenos?.nombre ?? ''
-                        : terreno[campo.key as keyof Terreno]
+                        : campo.key === 'barrio'
+                            ? terreno.cuadra?.barrio?.nombre ?? ''
+                            : campo.key === 'cuadra'
+                                ? terreno.cuadra?.nombre ?? ''
+                                : terreno[campo.key as keyof Terreno]
             }}
         </td>
 

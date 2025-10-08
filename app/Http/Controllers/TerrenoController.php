@@ -17,11 +17,12 @@ class TerrenoController extends Controller
     
     public function index(Request $request)
     {
-        $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'idcuadra', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion') 
+        $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'idcuadra', 'numero_terreno', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion')
         ->with([
-            'proyecto:id,nombre',           
+            'proyecto:id,nombre',
             'categorias_terrenos:id,nombre',
-            'cuadra:id,nombre'
+            'cuadra:id,nombre,idbarrio',
+            'cuadra.barrio:id,nombre' 
         ]);
 
         if ($request->has('ubicacion')) {
@@ -57,6 +58,7 @@ class TerrenoController extends Controller
             'idproyecto' => 'required|exists:proyectos,id',
             'idcategoria' => 'required|exists:categorias_terrenos,id',
             'idcuadra' => 'required|exists:cuadras,id',
+            'numero_terreno' => 'nullable|numeric', 
             'ubicacion' => 'required|string|max:255',
             'superficie' => 'required|string|max:255',
             'cuota_inicial' => 'required|numeric',
@@ -79,7 +81,7 @@ class TerrenoController extends Controller
         $terreno = Terreno::create($data);
 
         // Cargar relaciones
-        $terreno->load(['proyecto', 'categorias_terrenos', 'cuadra']);
+        $terreno->load(['proyecto', 'categorias_terrenos', 'cuadra.barrio']);
 
         return response()->json([
             'success' => true,
@@ -96,6 +98,7 @@ class TerrenoController extends Controller
             'idproyecto' => 'required|exists:proyectos,id',
             'idcategoria' => 'required|exists:categorias_terrenos,id',
             'idcuadra' => 'required|exists:cuadras,id',
+            'numero_terreno' => 'nullable|numeric', 
             'ubicacion' => 'required|string|max:255',
             'superficie' => 'required|string|max:255',
             'cuota_inicial' => 'required|numeric',
@@ -177,12 +180,13 @@ class TerrenoController extends Controller
     public function getTerrenos(Request $request)
     {
         
-         $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'idcuadra', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion') 
+        $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'idcuadra', 'numero_terreno', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion')
         ->with([
-        'proyecto:id,nombre',            
-        'categorias_terrenos:id,nombre',
-        'cuadra:id,nombre'  
-    ]);
+            'proyecto:id,nombre',
+            'categorias_terrenos:id,nombre',
+            'cuadra:id,nombre,idbarrio',
+            'cuadra.barrio:id,nombre'   
+        ]);
 
         
         if ($request->has('ubicacion') && $request->ubicacion) {
