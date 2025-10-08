@@ -35,3 +35,4 @@ require __DIR__ . '/proyectos.php';
 require __DIR__ . '/terrenos.php';
 require __DIR__ . '/mapas.php';
 require __DIR__.'/documentos.php';
+require __DIR__.'/barrios.php';
