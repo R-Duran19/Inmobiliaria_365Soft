@@ -83,13 +83,14 @@ class MapaController extends Controller
 
     /**
      * Obtener terrenos de un proyecto en formato GeoJSON para Leaflet/Mapbox
-     * Solo terrenos visibles en el mapa con condición activa
+     * Ahora incluye información de categoría con su color
      */
     public function getTerrenosGeoJSON($proyectoId)
     {
         $terrenos = Terreno::where('idproyecto', $proyectoId)
             ->where('condicion', true)
             ->whereNotNull('poligono')
+            ->with('categoriaTerreno')
             ->get();
 
         $features = [];
@@ -113,13 +114,23 @@ class MapaController extends Controller
                 $invertedCoordinates[] = $invertedRing;
             }
 
+            // Obtener color de la categoría o usar gris por defecto
+            $colorCategoria = $terreno->categoriaTerreno 
+                ? $terreno->categoriaTerreno->color 
+                : '#6b7280'; // Gris por defecto si no tiene categoría
+
+            $nombreCategoria = $terreno->categoriaTerreno 
+                ? $terreno->categoriaTerreno->nombre 
+                : ($terreno->categoria ?? 'Sin categoría');
+
             $features[] = [
                 'type' => 'Feature',
                 'properties' => [
                     'id' => $terreno->id,
                     'codigo' => $terreno->codigo,
                     'ubicacion' => $terreno->ubicacion,
-                    'categoria' => $terreno->categoria,
+                    'categoria' => $nombreCategoria,
+                    'categoria_color' => $colorCategoria,
                     'superficie' => $terreno->superficie,
                     'cuota_inicial' => $terreno->cuota_inicial,
                     'cuota_mensual' => $terreno->cuota_mensual,
@@ -143,19 +154,29 @@ class MapaController extends Controller
     }
 
     /**
-     * Obtener categorías activas de un proyecto
-     * Para filtros de categorías en el mapa
+     * Obtener categorías activas de un proyecto con conteo de terrenos
+     * Para la leyenda del mapa
      */
-    public function getCategorias($proyectoId)
-    {
-        $categorias = CategoriaTerreno::where('idproyecto', $proyectoId)
-            ->where('estado', true)
-            ->select('id', 'nombre', 'descripcion', 'color')
-            ->orderBy('nombre', 'asc')
-            ->get();
+public function getCategorias($proyectoId)
+{
+    $categorias = CategoriaTerreno::where('idproyecto', $proyectoId)
+        ->where('estado', true)
+        ->withCount(['terrenos' => function($query) {
+            $query->where('condicion', true);
+        }])
+        ->orderBy('nombre', 'asc')
+        ->get()
+        ->map(function($categoria) {
+            return [
+                'id' => $categoria->id,
+                'nombre' => $categoria->nombre,
+                'color' => $categoria->color,
+                'total_terrenos' => $categoria->terrenos_count ?? 0
+            ];
+        });
 
-        return response()->json($categorias);
-    }
+    return response()->json($categorias);
+}
 
     /**
      * Helper: Obtener etiqueta legible del estado

@@ -200,5 +200,13 @@ class TerrenoController extends Controller
         ]);
     }
 
+    public function show(Terreno $terreno)
+    {
+        return response()->json([
+            'id' => $terreno->id,
+            'ubicacion' => $terreno->ubicacion,
+            'proyecto' => $terreno->proyecto,
+        ]);
+    }
 
 }

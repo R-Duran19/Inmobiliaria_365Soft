@@ -26,6 +26,11 @@ const confirmModal = reactive({
     documento: null as any,
 });
 
+const infoModal = reactive({
+    visible: false,
+    documento: null as any,
+});
+
 const documentos = ref<any[]>([]);
 
 async function cargarDocumentos() {
@@ -104,6 +109,16 @@ async function confirmarEliminacion() {
     }
 }
 
+function abrirInfoModal(doc: any) {
+    infoModal.documento = doc;
+    infoModal.visible = true;
+}
+
+function cerrarInfoModal() {
+    infoModal.visible = false;
+    infoModal.documento = null;
+}
+
 function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
     notificacion.tipo = tipo;
     notificacion.mensaje = mensaje;
@@ -136,6 +151,10 @@ function getFileIcon(filename: string) {
         rar: '🗜️',
     };
     return icons[ext] || '📎';
+}
+
+function tieneInformacion(doc: any) {
+    return doc.estado_ocr === 'procesado' && doc.datos_extraidos && Object.keys(doc.datos_extraidos).length > 0;
 }
 </script>
 
@@ -244,28 +263,56 @@ function getFileIcon(filename: string) {
                                     {{ getFileIcon(doc.nombre_documento) }}
                                 </div>
 
-                                <!-- Delete Button Overlay -->
-                                <button
-                                    @click="abrirConfirmacion(doc)"
-                                    class="absolute top-2 right-2 bg-red-500 text-white 
-                                        rounded-full p-2 opacity-0 group-hover:opacity-100
-                                        transition-opacity duration-200 hover:bg-red-600
-                                        shadow-lg"
-                                    title="Eliminar documento"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
+                                <!-- Botones de acción overlay -->
+                                <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <!-- Botón Ver Información -->
+                                    <button
+                                        v-if="tieneInformacion(doc)"
+                                        @click="abrirInfoModal(doc)"
+                                        class="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 shadow-lg"
+                                        title="Ver información extraída"
                                     >
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+
+                                    <!-- Botón Eliminar -->
+                                    <button
+                                        @click="abrirConfirmacion(doc)"
+                                        class="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 shadow-lg"
+                                        title="Eliminar documento"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Badge de estado OCR -->
+                                <div v-if="doc.estado_ocr === 'procesado' && tieneInformacion(doc)" 
+                                     class="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                                    ✓ Escaneado
+                                </div>
+                                <div v-else-if="doc.estado_ocr === 'error'" 
+                                     class="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                                    ✕ Error OCR
+                                </div>
                             </div>
 
                             <!-- Document Info -->
@@ -286,6 +333,145 @@ function getFileIcon(filename: string) {
             </div>
         </div>
 
+        <!-- Modal de Información Extraída -->
+        <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 scale-90"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-90"
+        >
+            <div
+                v-if="infoModal.visible"
+                class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                @click="cerrarInfoModal"
+            >
+                <!-- Overlay -->
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+                <!-- Modal -->
+                <div
+                    @click.stop
+                    class="relative z-10 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform max-h-[90vh] overflow-y-auto"
+                >
+                    <!-- Cabecera -->
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4">
+                            <svg
+                                class="w-8 h-8 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">
+                            Información Extraída
+                        </h3>
+                        <p class="text-white/80 text-sm mt-2">{{ infoModal.documento?.nombre_documento }}</p>
+                    </div>
+
+                    <!-- Contenido -->
+                    <div class="p-6">
+                        <div v-if="infoModal.documento?.datos_extraidos" class="space-y-4">
+                            <!-- Tipo de documento -->
+                            <div v-if="infoModal.documento.datos_extraidos.tipo_documento" 
+                                 class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Tipo de Documento</p>
+                                <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ infoModal.documento.datos_extraidos.tipo_documento }}
+                                </p>
+                            </div>
+
+                            <!-- Grid de datos -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div v-if="infoModal.documento.datos_extraidos.numero_documento" 
+                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Número de Documento</p>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ infoModal.documento.datos_extraidos.numero_documento }}
+                                    </p>
+                                </div>
+
+                                <div v-if="infoModal.documento.datos_extraidos.fecha" 
+                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Fecha</p>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ infoModal.documento.datos_extraidos.fecha }}
+                                    </p>
+                                </div>
+
+                                <div v-if="infoModal.documento.datos_extraidos.codigo_catastral" 
+                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Código Catastral</p>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ infoModal.documento.datos_extraidos.codigo_catastral }}
+                                    </p>
+                                </div>
+
+                                <div v-if="infoModal.documento.datos_extraidos.matricula" 
+                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Matrícula</p>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ infoModal.documento.datos_extraidos.matricula }}
+                                    </p>
+                                </div>
+
+                                <div v-if="infoModal.documento.datos_extraidos.superficie" 
+                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Superficie</p>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ infoModal.documento.datos_extraidos.superficie }} m²
+                                    </p>
+                                </div>
+
+                                <div v-if="infoModal.documento.datos_extraidos.propietario" 
+                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Propietario</p>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                        {{ infoModal.documento.datos_extraidos.propietario }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Ubicación (ocupa todo el ancho) -->
+                            <div v-if="infoModal.documento.datos_extraidos.ubicacion" 
+                                 class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Ubicación</p>
+                                <p class="font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ infoModal.documento.datos_extraidos.ubicacion }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div v-else class="text-center py-8 text-gray-500">
+                            No se pudo extraer información de este documento
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-6 pt-0">
+                        <button
+                            @click="cerrarInfoModal"
+                            class="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 
+                                text-gray-700 dark:text-gray-300 rounded-xl font-semibold
+                                hover:bg-gray-200 dark:hover:bg-gray-600 
+                                transition-colors duration-200"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
         <!-- Modal de Confirmación de Eliminación -->
         <Transition
             enter-active-class="transition-all duration-300 ease-out"
@@ -300,15 +486,12 @@ function getFileIcon(filename: string) {
                 class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                 @click="cancelarEliminacion"
             >
-                <!-- Overlay -->
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
-                <!-- Modal -->
                 <div
                     @click.stop
                     class="relative z-10 w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform"
                 >
-                    <!-- Cabecera con icono -->
                     <div class="bg-gradient-to-br from-red-500 to-red-600 p-6 text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4">
                             <svg
@@ -330,7 +513,6 @@ function getFileIcon(filename: string) {
                         </h3>
                     </div>
 
-                    <!-- Contenido -->
                     <div class="p-6">
                         <p class="text-gray-600 dark:text-gray-300 text-center mb-2">
                             ¿Está seguro de eliminar el documento?
@@ -343,7 +525,6 @@ function getFileIcon(filename: string) {
                         </p>
                     </div>
 
-                    <!-- Botones -->
                     <div class="flex gap-3 p-6 pt-0">
                         <button
                             @click="cancelarEliminacion"
@@ -390,7 +571,6 @@ function getFileIcon(filename: string) {
                     ]"
                 >
                     <div class="flex items-start p-4 gap-3">
-                        <!-- Icon -->
                         <div
                             :class="[
                                 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold shadow-lg',
@@ -400,7 +580,6 @@ function getFileIcon(filename: string) {
                             {{ notificacion.tipo === 'success' ? '✓' : '✕' }}
                         </div>
 
-                        <!-- Content -->
                         <div class="flex-1 pt-0.5">
                             <h3 class="font-semibold text-base mb-1">
                                 {{ notificacion.tipo === 'success' ? 'Éxito' : 'Error' }}
@@ -410,7 +589,6 @@ function getFileIcon(filename: string) {
                             </p>
                         </div>
 
-                        <!-- Close Button -->
                         <button
                             @click="notificacion.visible = false"
                             class="flex-shrink-0 text-white/70 hover:text-white transition-colors rounded-lg p-1 hover:bg-white/10"
@@ -431,7 +609,6 @@ function getFileIcon(filename: string) {
                         </button>
                     </div>
 
-                    <!-- Progress Bar -->
                     <div class="h-1 bg-white/20">
                         <div
                             class="h-full bg-white/50 notification-progress"
@@ -444,7 +621,6 @@ function getFileIcon(filename: string) {
 </template>
 
 <style scoped>
-/* Animaciones suaves */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -460,7 +636,6 @@ function getFileIcon(filename: string) {
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Barra de progreso para notificación */
 @keyframes notificationProgress {
     from {
         width: 100%;

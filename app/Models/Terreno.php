@@ -39,10 +39,10 @@ class Terreno extends Model
         return $this->belongsTo(Proyecto::class, 'idproyecto');
     }
 
-    public function categorias_terrenos()
-    {
-        return $this->belongsTo(CategoriaTerreno::class, 'idcategoria');
-    }
+public function categorias_terrenos()
+{
+    return $this->belongsTo(CategoriaTerreno::class, 'idcategoria');
+}
 
     // Accessor para obtener el polígono como GeoJSON
     public function getPoligonoGeojsonAttribute()

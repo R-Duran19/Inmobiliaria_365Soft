@@ -72,7 +72,7 @@ class TerrenoSeeder extends Seeder
         Terreno::create([
             'idproyecto' => 1,
             'ubicacion' => 'Zona Sur',
-            'idcategoria' => 3,
+            'idcategoria' => 1,
             'superficie' => '80 m²',
             'cuota_inicial' => 5000.00,
             'cuota_mensual' => 300.00,
