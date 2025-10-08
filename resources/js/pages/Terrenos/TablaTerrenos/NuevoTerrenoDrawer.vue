@@ -12,6 +12,16 @@ interface Categoria {
     nombre: string;
 }
 
+interface Barrio {
+    id: number;
+    nombre: string;
+}
+
+interface Cuadra {
+    id: number;
+    nombre: string;
+}
+
 const props = defineProps<{
     visible: boolean;
     proyectos: Proyecto[];
@@ -24,11 +34,15 @@ const emit = defineEmits<{
 
 const categorias = ref<Categoria[]>([]);
 const proyectos = ref<Proyecto[]>([]);
+const barrios = ref<Barrio[]>([]);
+const cuadras = ref<Cuadra[]>([]);
 const loading = ref(false);
 
 const form = reactive({
     idproyecto: '0' as string | number,
     idcategoria: 0 as number,
+    idbarrio: 0 as number, 
+    idcuadra: 0 as number,
     ubicacion: '' as string,
     superficie: '' as string,
     precio_venta: null as number | null,
@@ -41,6 +55,9 @@ const form = reactive({
 onMounted(() => {
     cargarProyectos();
     cargarCategorias();
+    if (form.idproyecto) {
+        cargarBarrios();
+    }
 });
 
 async function cargarProyectos() {
@@ -73,7 +90,39 @@ async function cargarCategorias() {
     }
 }
 
+async function cargarBarrios() {
+    try {
+        const { data } = await axios.get(`/barrios/proyecto/${form.idproyecto}`);
+        barrios.value = data.barrios || [];
+    } catch (error) {
+        console.error('Error al obtener barrios:', error);
+        barrios.value = [];
+    }
+}
+
+async function cargarCuadras() {
+    try {
+        const { data } = await axios.get(`/cuadras/barrio/${form.idbarrio}`);
+        cuadras.value = data.cuadras || [];
+    } catch (error) {
+        console.error('Error al obtener cuadras:', error);
+        cuadras.value = [];
+    }
+}
+
 watch(() => form.idproyecto, cargarCategorias);
+
+watch(() => form.idproyecto, (newIdProyecto) => {
+    if (newIdProyecto) {
+        cargarBarrios();
+    }
+});
+
+watch(() => form.idbarrio, (newIdBarrio) => {
+    if (newIdBarrio) {
+        cargarCuadras();
+    }
+});
 
 async function guardarTerreno() {
     emit('created', { ...form });
@@ -161,6 +210,39 @@ async function guardarTerreno() {
                     </select>
                 </div>
 
+                <div class="mb-4">
+                    <label class="mb-1 block font-medium">Barrio</label>
+                    <select
+                        v-model="form.idbarrio"
+                        class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
+                    >
+                        <option disabled value="0">Selecciona un barrio</option>
+                        <option
+                            v-for="barrio in barrios"
+                            :key="barrio.id"
+                            :value="barrio.id"
+                        >
+                            {{ barrio.nombre }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="mb-1 block font-medium">Cuadra</label>
+                    <select
+                        v-model="form.idcuadra"
+                        class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
+                    >
+                        <option disabled value="0">Selecciona una cuadra</option>
+                        <option
+                            v-for="cuadra in cuadras"
+                            :key="cuadra.id"
+                            :value="cuadra.id"
+                        >
+                            {{ cuadra.nombre }}
+                        </option>
+                    </select>
+                </div>
                 
                 <div>
                     <label class="mb-1 block font-medium">Ubicación</label>

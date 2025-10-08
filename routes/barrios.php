@@ -10,4 +10,5 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->group(function () {
         Route::post('postBarrios', [BarrioController::class, 'postBarrios']);
         Route::get('getUltimoId', [BarrioController::class, 'getUltimoIdBarrio']);
+        Route::get('proyecto/{idproyecto}', [BarrioController::class, 'getBarriosPorProyecto'])->name('proyecto');
     });

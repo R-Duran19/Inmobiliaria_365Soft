@@ -118,6 +118,10 @@ onMounted(() => {
             <h1 class="text-2xl font-semibold text-gray-800 dark:text-white">
                 Documentos del Terreno - ({{ nombreProyecto }} | {{ ubicacionTerreno }})
             </h1>
+            <div v-if="documentos.length === 0" class="text-center py-12">
+                <p class="text-gray-500 text-lg">Aún no se subieron documentos</p>
+            </div>
+            <!-- Lista de documentos -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div
                     v-for="doc in documentos"

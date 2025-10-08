@@ -13,6 +13,7 @@ class Terreno extends Model
     protected $fillable = [
         'idproyecto',
         'idcategoria',
+        'idcuadra',
         'ubicacion',
         'categoria',
         'superficie',
@@ -39,10 +40,17 @@ class Terreno extends Model
         return $this->belongsTo(Proyecto::class, 'idproyecto');
     }
 
-public function categorias_terrenos()
-{
-    return $this->belongsTo(CategoriaTerreno::class, 'idcategoria');
-}
+    // Relación con categoría
+    public function categorias_terrenos()
+    {
+        return $this->belongsTo(CategoriaTerreno::class, 'idcategoria');
+    }
+
+    // Relación con cuadra
+    public function cuadra()
+    {
+        return $this->belongsTo(Cuadra::class, 'idcuadra');
+    }
 
     // Accessor para obtener el polígono como GeoJSON
     public function getPoligonoGeojsonAttribute()

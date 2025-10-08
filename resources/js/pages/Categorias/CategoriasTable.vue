@@ -34,7 +34,7 @@ defineEmits(['refresh', 'edit']);
           <td colspan="4" class="px-6 py-4 text-center">Cargando...</td>
         </tr>
         <tr v-else-if="categorias.length === 0">
-          <td colspan="4" class="px-6 py-12 text-center">
+          <td colspan="5" class="px-6 py-12 text-center">
             <div class="flex flex-col items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v14h14V5H5z" />
