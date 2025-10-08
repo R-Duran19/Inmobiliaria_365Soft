@@ -1,7 +1,21 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, computed  } from 'vue';
 import axios from 'axios';
 import { type BreadcrumbItem } from '@/types';
+
+/* === SWIPER IMPORTS === */
+const nextBtnRef = ref<HTMLDivElement | null>(null);
+const prevBtnRef = ref<HTMLDivElement | null>(null);
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Navigation, Pagination, Autoplay, EffectCoverflow, EffectFade} from 'swiper/modules';
+
+const slidesPerView = computed(() => Math.min(3, documentos.value.length || 1));
+const enableLoop = computed(() => documentos.value.length > 3);
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
+/* ======================= */
 
 const props = defineProps({
     terrenoId: Number,
@@ -33,6 +47,13 @@ const infoModal = reactive({
 
 const documentos = ref<any[]>([]);
 
+/* === SWIPER REF (para controlar si hace falta) === */
+const swiperRef = ref<any>(null);
+function onSwiperInit(swiperInstance: any) {
+    swiperRef.value = swiperInstance;
+}
+/* ================================================ */
+
 async function cargarDocumentos() {
     try {
         const res = await axios.get(`/documentos/list/${props.terrenoId}`);
@@ -45,6 +66,12 @@ async function cargarDocumentos() {
 
 onMounted(() => {
     cargarDocumentos();
+    if (swiperRef.value && nextBtnRef.value && prevBtnRef.value) {
+        swiperRef.value.params.navigation.nextEl = nextBtnRef.value;
+        swiperRef.value.params.navigation.prevEl = prevBtnRef.value;
+        swiperRef.value.navigation.init();
+        swiperRef.value.navigation.update();
+    }
 });
 
 async function subirArchivos() {
@@ -81,6 +108,10 @@ async function subirArchivos() {
     } finally {
         isUploading.value = false;
     }
+}
+
+function onSlideChange(swiper: any) {
+    console.log('Índice real:', swiper.realIndex); // Siempre el slide “real”
 }
 
 function abrirConfirmacion(doc: any) {
@@ -156,6 +187,11 @@ function getFileIcon(filename: string) {
 function tieneInformacion(doc: any) {
     return doc.estado_ocr === 'procesado' && doc.datos_extraidos && Object.keys(doc.datos_extraidos).length > 0;
 }
+
+/* === Helper para obtener URL (usa la ruta que ya usabas en tu grid) === */
+function getImageUrl(doc: any) {
+    return `/documentos_clientes/${props.terrenoId}/${doc.nombre_documento}`;
+}
 </script>
 
 <template>
@@ -215,7 +251,69 @@ function tieneInformacion(doc: any) {
                     </div>
                 </div>
 
-                <!-- Documents Grid -->
+                <div v-if="documentos.length" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🎞️</span>
+                        Vista en Carrusel
+                        <span class="ml-auto text-sm text-gray-500 dark:text-gray-400">{{ documentos.length }} items</span>
+                    </h2>
+
+                    <div class="max-w-4xl mx-auto">
+                        <swiper
+                            :modules="[Navigation, Pagination, Autoplay, EffectCoverflow]"
+                            :navigation="{ nextEl: nextBtnRef, prevEl: prevBtnRef }"
+                            @slideChange="onSlideChange"
+                            :pagination="{ clickable: true }"
+                            :autoplay="{ delay: 5000, disableOnInteraction: false }"
+                            effect="coverflow"
+                            :centeredSlides="true"
+                            :slidesPerView="slidesPerView"
+                            :loop="enableLoop"
+                            :coverflowEffect="{
+                                rotate: 50,
+                                stretch: 0,
+                                depth: 100,
+                                modifier: 1,
+                                slideShadows: true
+                            }"
+                        >
+
+                        <SwiperSlide
+                            v-for="doc in documentos"
+                            :key="doc.id"
+                            class="relative"
+                        >
+                            <div class="relative w-full h-94 md:h-96 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-xl">
+                            <img
+                                v-if="isImage(doc.nombre_documento)"
+                                :src="getImageUrl(doc)"
+                                :alt="doc.nombre_documento"
+                                class="w-full h-full object-contain bg-gray-100"
+                            />
+                            <div v-else class="flex flex-col items-center gap-3">
+                                <div class="text-8xl select-none">{{ getFileIcon(doc.nombre_documento) }}</div>
+                                <p class="text-sm font-medium text-center break-words px-4">{{ doc.nombre_documento }}</p>
+                                <a
+                                :href="getImageUrl(doc)"
+                                target="_blank"
+                                rel="noopener"
+                                class="mt-2 inline-block px-3 py-1 rounded-full bg-white/90 text-gray-900 font-medium"
+                                >
+                                Abrir documento
+                                </a>
+                            </div>
+                            </div>
+                        </SwiperSlide>
+                        <div ref="nextBtnRef" class="swiper-button-next text-gray-800 dark:text-gray-100"></div>
+                        <div ref="prevBtnRef" class="swiper-button-prev text-gray-800 dark:text-gray-100"></div>
+                        </swiper>
+                    </div>
+                </div>
+
+
+
+
+                <!-- Documents Grid (tu grid original) -->
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
                         <span class="text-2xl">📚</span>
@@ -302,6 +400,17 @@ function tieneInformacion(doc: any) {
                                             />
                                         </svg>
                                     </button>
+                                    <!-- Botón Descargar -->
+                                    <a
+                                        :href="`/documentos_clientes/${props.terrenoId}/${doc.nombre_documento}`"
+                                        download
+                                        class="bg-green-500 text-white rounded-full p-2 hover:bg-green-600 shadow-lg flex items-center justify-center"
+                                        title="Descargar documento"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M3 14a1 1 0 011-1h3v-4a1 1 0 112 0v4h3a1 1 0 110 2H4a1 1 0 01-1-1zm7-8a1 1 0 011 1v4h-2V7a1 1 0 011-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </a>
                                 </div>
 
                                 <!-- Badge de estado OCR -->
