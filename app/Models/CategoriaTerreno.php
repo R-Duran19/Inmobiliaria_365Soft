@@ -16,4 +16,8 @@ class CategoriaTerreno extends Model
     {
         return $this->belongsTo(Proyecto::class, 'idproyecto');
     }
+    public function terrenos()
+{
+    return $this->hasMany(Terreno::class, 'idcategoria', 'id');
+}
 }

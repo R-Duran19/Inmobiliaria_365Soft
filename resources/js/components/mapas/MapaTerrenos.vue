@@ -11,9 +11,17 @@ interface Props {
 
 const props = defineProps<Props>();
 
+interface Categoria {
+  id: number;
+  nombre: string;
+  color: string;
+  total_terrenos: number;
+}
+
 const mapContainer = ref<HTMLDivElement | null>(null);
 let map: L.Map | null = null;
 const terrenos = ref<any[]>([]);
+const categorias = ref<Categoria[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
@@ -29,27 +37,12 @@ onMounted(() => {
 });
 onUnmounted(() => observer.disconnect());
 
-
 const getTileLayer = () => {
   return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   });
-};
-
-
-const getColorByEstado = (estado: number) => {
-  switch (estado) {
-    case 0:
-      return '#10b981'; // Disponible
-    case 1:
-      return '#ef4444'; // Vendido
-    case 2:
-      return '#f59e0b'; // Reservado
-    default:
-      return '#6b7280'; // Desconocido
-  }
 };
 
 const getEstadoTexto = (estado: number) => {
@@ -65,6 +58,35 @@ const getEstadoTexto = (estado: number) => {
   }
 };
 
+const getEstadoBadgeColor = (estado: number) => {
+  switch (estado) {
+    case 0:
+      return '#10b981'; // Verde - Disponible
+    case 1:
+      return '#ef4444'; // Rojo - Vendido
+    case 2:
+      return '#f59e0b'; // Naranja - Reservado
+    default:
+      return '#6b7280'; // Gris
+  }
+};
+
+// Cargar categorías del proyecto
+const cargarCategorias = async () => {
+  try {
+    const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}/categorias`);
+    if (response.data && Array.isArray(response.data)) {
+      categorias.value = response.data;
+      console.log('✅ Categorías cargadas:', categorias.value.length); // Debug
+    } else {
+      console.warn('⚠️ Respuesta de categorías no es un array:', response.data);
+    }
+  } catch (err: any) {
+    console.error('❌ Error al cargar categorías:', err);
+    error.value = 'Error al cargar las categorías'; // Mostrar error al usuario
+  }
+};
+
 // Cargar terrenos desde API
 const cargarTerrenos = async () => {
   try {
@@ -72,20 +94,26 @@ const cargarTerrenos = async () => {
     error.value = null;
 
     const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}/terrenos`);
+    
+    console.log('📦 Respuesta terrenos:', response.data); // Debug
 
-    if (response.data && Array.isArray(response.data.features)) {
+    if (response.data && response.data.type === 'FeatureCollection' && Array.isArray(response.data.features)) {
       terrenos.value = response.data.features;
+      console.log('✅ Terrenos cargados:', terrenos.value.length); // Debug
       dibujarTerrenos();
+    } else {
+      console.warn('⚠️ Formato de respuesta inválido:', response.data);
+      error.value = 'Formato de datos de terrenos inválido';
     }
   } catch (err: any) {
-    console.error('Error al cargar terrenos:', err);
+    console.error('❌ Error al cargar terrenos:', err);
     error.value = 'Error al cargar los terrenos';
   } finally {
     loading.value = false;
   }
 };
 
-// Dibujar terrenos
+// Dibujar terrenos con colores de categoría
 const dibujarTerrenos = () => {
   if (!map || terrenos.value.length === 0) return;
 
@@ -96,12 +124,13 @@ const dibujarTerrenos = () => {
 
   const terrenosLayer = L.geoJSON(geojsonObject, {
     style: (feature) => {
-      const estado = feature?.properties?.estado || 0;
+      // Usar el color de la categoría del terreno
+      const color = feature?.properties?.categoria_color || '#6b7280';
       return {
-        color: getColorByEstado(estado),
+        color: color,
         weight: 2,
         fillOpacity: 0.5,
-        fillColor: getColorByEstado(estado),
+        fillColor: color,
       };
     },
     onEachFeature: (feature, layer) => {
@@ -114,14 +143,21 @@ const dibujarTerrenos = () => {
           <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">
             ${props.codigo || `Terreno #${props.id}`}
           </h3>
-          <div style="background-color: ${getColorByEstado(props.estado)}; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; font-size: 12px; font-weight: bold;">
-            ${getEstadoTexto(props.estado)}
+          
+          <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+            <div style="background-color: ${getEstadoBadgeColor(props.estado)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${getEstadoTexto(props.estado)}
+            </div>
+            <div style="background-color: ${props.categoria_color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+              ${props.categoria}
+            </div>
           </div>
+
           <div style="border-top: 1px solid ${dividerColor}; padding-top: 10px; margin-top: 10px;">
-            <p style="margin: 5px 0; font-size: 14px;"><strong>Categoría:</strong> ${props.categoria}</p>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Ubicación:</strong> ${props.ubicacion}</p>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Superficie:</strong> ${props.superficie}</p>
           </div>
+          
           <div style="border-top: 1px solid ${dividerColor}; padding-top: 10px; margin-top: 10px;">
             <p style="margin: 5px 0; font-size: 15px; color: #10b981;"><strong>Precio Venta:</strong> $${Number(
               props.precio_venta
@@ -154,6 +190,9 @@ onMounted(async () => {
   if (!mapContainer.value) return;
   map = L.map(mapContainer.value).setView([-17.3895, -66.3167], 15);
   getTileLayer().addTo(map);
+  
+  // Cargar categorías y terrenos
+  await cargarCategorias();
   await cargarTerrenos();
 });
 
@@ -201,7 +240,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Panel Info -->
+    <!-- Panel Info del Proyecto (mantiene contadores de estados) -->
     <div
       class="absolute top-4 left-4 z-[1000] bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg 
              max-w-xs text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
@@ -211,40 +250,58 @@ onUnmounted(() => {
 
       <div class="grid grid-cols-3 gap-2 text-center">
         <div>
-          <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ proyecto.terrenos_disponibles }}</div>
+          <div class="text-xl font-bold text-green-600 dark:text-green-400">
+            {{ proyecto.terrenos_disponibles }}
+          </div>
           <div class="text-xs text-gray-600 dark:text-gray-400">Disponibles</div>
         </div>
         <div>
-          <div class="text-xl font-bold text-orange-600 dark:text-orange-400">{{ proyecto.terrenos_reservados }}</div>
+          <div class="text-xl font-bold text-orange-600 dark:text-orange-400">
+            {{ proyecto.terrenos_reservados }}
+          </div>
           <div class="text-xs text-gray-600 dark:text-gray-400">Reservados</div>
         </div>
         <div>
-          <div class="text-xl font-bold text-red-600 dark:text-red-400">{{ proyecto.terrenos_vendidos }}</div>
+          <div class="text-xl font-bold text-red-600 dark:text-red-400">
+            {{ proyecto.terrenos_vendidos }}
+          </div>
           <div class="text-xs text-gray-600 dark:text-gray-400">Vendidos</div>
         </div>
       </div>
     </div>
 
-    <!-- Leyenda -->
+    <!-- Leyenda de Categorías -->
     <div
       class="absolute bottom-4 right-4 z-[1000] bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg 
-             text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+             text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700 max-w-xs"
     >
-      <h4 class="font-bold mb-3 text-sm">Leyenda</h4>
-      <div class="space-y-2 text-xs">
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 rounded" style="background-color: #10b981; border: 2px solid #059669;"></div>
-          <span>Disponible</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 rounded" style="background-color: #f59e0b; border: 2px solid #d97706;"></div>
-          <span>Reservado</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 rounded" style="background-color: #ef4444; border: 2px solid #dc2626;"></div>
-          <span>Vendido</span>
+      <h4 class="font-bold mb-3 text-sm">Categorías de Terrenos</h4>
+      
+      <div v-if="categorias.length > 0" class="space-y-2 text-xs max-h-64 overflow-y-auto">
+        <div
+          v-for="categoria in categorias"
+          :key="categoria.id"
+          class="flex items-center justify-between gap-2 py-1"
+        >
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <div
+              class="w-5 h-5 rounded flex-shrink-0"
+              :style="`background-color: ${categoria.color}; border: 2px solid ${categoria.color};`"
+            ></div>
+            <span class="truncate" :title="categoria.nombre">{{ categoria.nombre }}</span>
+          </div>
+          <span class="text-gray-500 dark:text-gray-400 text-xs font-medium flex-shrink-0">
+            {{ categoria.total_terrenos }}
+          </span>
         </div>
       </div>
+
+      <div v-else class="text-center py-4">
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          No hay categorías configuradas
+        </p>
+      </div>
+
       <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
         <p class="text-xs text-gray-600 dark:text-gray-400">
           Total: <strong>{{ terrenos.length }}</strong> terrenos
