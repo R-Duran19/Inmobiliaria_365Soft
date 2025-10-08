@@ -98,6 +98,13 @@ class DocumentoTerrenoController extends Controller
         $documentos = DocumentoTerreno::where('idterreno', $terrenoId)->get();
         return response()->json($documentos);
     }
+        
+    public function visualizar($terrenoId)
+    {
+        return inertia('Documentos/VisualizarDocumentos', [
+            'terrenoId' => $terrenoId,
+        ]);
+    }
 
     // ============ MÉTODOS PRIVADOS PARA OCR ============
 

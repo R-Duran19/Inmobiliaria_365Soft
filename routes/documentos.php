@@ -22,3 +22,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             'terrenoId' => $id,
         ]);
     })->name('documentos.terreno');
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->get('documentos/visualizar/{terrenoId}', [DocumentoTerrenoController::class, 'visualizar'])
+    ->name('documentos.visualizar');

@@ -23,4 +23,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 Route::middleware(['auth', 'verified', 'role:admin'])
     ->get('api/terrenos', [TerrenoController::class, 'getTerrenos']);
 
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->get('api/terrenos/{terreno}', [TerrenoController::class, 'show'])
+    ->name('terrenos.show');
+
 // Route::get('api/terrenos', [TerrenoController::class, 'getTerrenos']);
