@@ -32,7 +32,7 @@ const emit = defineEmits<{
 
 async function guardarTerreno(formData: any) {
   try {
-    if (!formData.categoria) {
+    if (!formData.idcategoria) {
         notificacion.tipo = 'error';
         notificacion.mensaje = 'Debe seleccionar una categoría antes de crear un nuevo proyecto';
         notificacion.visible = true;
@@ -42,7 +42,7 @@ async function guardarTerreno(formData: any) {
     const { data } = await axios.post('/terrenos', formData);
 
 
-    terrenos.value.push(data);
+    terrenos.value.push(data.terreno);
 
 
     estadoDialogos.nuevoTerrenoVisible = false;
@@ -79,18 +79,18 @@ function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
 const filteredTerrenos = computed(() =>
   terrenos.value.filter((t) => {
     const nombreProyecto = t.proyecto?.nombre?.toLowerCase() ?? '';
-    const filterProyecto = search.nombreProyecto.toLowerCase().trim();
+    const filterProyecto = (search.nombreProyecto ?? '').toLowerCase().trim();
 
-    const filterUbicacion = t.ubicacion.toLowerCase().includes(
-      search.ubicacion.toLowerCase().trim()
-    );
+    const ubicacion = (t.ubicacion ?? '').toLowerCase();
+    const filterUbicacion = (search.ubicacion ?? '').toLowerCase().trim();
 
-    const filterNombreProyecto =
-      !filterProyecto || nombreProyecto.includes(filterProyecto);
+    const matchProyecto = !filterProyecto || nombreProyecto.includes(filterProyecto);
+    const matchUbicacion = !filterUbicacion || ubicacion.includes(filterUbicacion);
 
-    return filterUbicacion && filterNombreProyecto;
+    return matchProyecto && matchUbicacion;
   })
 );
+
 
 
 
@@ -117,16 +117,22 @@ async function eliminarTerreno() {
     }
 }
 
-function actualizarTerrenoEnLista(terreno: Terreno) {
-    const index = terrenos.value.findIndex((t) => t.id === terreno.id);
-    if (index !== -1) {
-        terrenos.value[index] = {
-            ...terrenos.value[index],
-            ...terreno,
-            proyecto: { ...terreno.proyecto }
-        };
 
-    }   
+async function actualizarTerrenoEnLista() {
+    try {
+        const { data } = await axios.get(
+            `api/terrenos/`,
+        );
+
+        console.log('hola aqui ', data.terrenos)
+
+        if (data.success) {
+            terrenos.value = data.terrenos;
+        }
+
+    } catch (err) {
+        console.error('Error cargando terrenos:', err);
+    }
 }
 
 
@@ -143,9 +149,6 @@ function mostrarTerrenos() {
             <TerrenosHeader
                 v-model:search="search"
                 @created="guardarTerreno"
-                @export="
-                    () => mostrarNotificacion('success', 'Terrenos exportados')
-                "
             />
 
             <CostosDrawer
@@ -157,7 +160,7 @@ function mostrarTerrenos() {
                 :terrenos="filteredTerrenos"
                 @costos="abrirCostos"
                 @deleted="pedirConfirmacionEliminar"
-                @updated="actualizarTerrenoEnLista($event)"
+                @updated="actualizarTerrenoEnLista()"
             />
         </div>
 

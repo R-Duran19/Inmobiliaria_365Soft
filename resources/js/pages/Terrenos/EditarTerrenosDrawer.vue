@@ -27,7 +27,7 @@ interface Categoria {
 
 const form = reactive({
     idproyecto: '' as number | '',
-    categoria: '' as string,
+    idcategoria: 0 as number,
     ubicacion: '' as string,
     superficie: null as string | null,
     precio_venta: null as number | null,
@@ -85,10 +85,10 @@ watch(
 
         // Resetear categoría si no hay disponibles
         if (!categorias.value.length) {
-            form.categoria = '';
+            form.idcategoria = 0;
         } else {
             // Opcional: si quieres seleccionar la primera categoría automáticamente
-            form.categoria = '';
+            form.idcategoria = props.terreno?.idcategoria ?? 1;
         }
     },
 );
@@ -103,7 +103,7 @@ watch(
     (t) => {
         if (t) {
             form.idproyecto = t.idproyecto;
-            form.categoria = t.categoria ?? '';
+            form.idcategoria = t.idcategoria ?? 0;
             form.ubicacion = t.ubicacion;
             form.superficie = t.superficie;
             form.precio_venta = t.precio_venta;
@@ -126,7 +126,7 @@ const loading = ref(false);
 async function actualizarTerreno() {
     if (!props.terreno) return;
 
-    if (!form.categoria) {
+    if (!form.idcategoria) {
         notificacion.tipo = 'error';
         notificacion.mensaje =
             'Debe seleccionar una categoría antes de actualizar';
@@ -220,7 +220,7 @@ async function actualizarTerreno() {
                     
                     <label class="mt-2 block font-medium">Categoría</label>
                     <select
-                        v-model="form.categoria"
+                        v-model="form.idcategoria"
                         class="block w-full rounded-md border border-gray-300 bg-white px-4 py-2 pr-8 text-gray-700 focus:border-blue-500 focus:ring focus:ring-blue-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                     >
                         <option disabled value="">
@@ -229,7 +229,7 @@ async function actualizarTerreno() {
                         <option
                             v-for="c in categorias"
                             :key="c.id"
-                            :value="c.nombre"
+                            :value="c.id"
                         >
                             {{ c.nombre }}
                         </option>

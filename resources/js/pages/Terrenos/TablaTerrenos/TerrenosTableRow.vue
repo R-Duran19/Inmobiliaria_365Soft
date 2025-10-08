@@ -125,7 +125,13 @@ function obtenerValor(obj: any, ruta: string) {
             :key="campo.key"
             class="px-6 py-4 text-gray-900 dark:text-gray-100"
         >
-            {{ campo.key === 'proyecto.nombre' ? terreno.proyecto.nombre : terreno[campo.key as keyof Terreno] }}
+            {{
+                campo.key === 'proyecto.nombre'
+                    ? terreno.proyecto?.nombre ?? ''
+                    : campo.key === 'categoria'
+                        ? terreno.categorias_terrenos?.nombre ?? ''
+                        : terreno[campo.key as keyof Terreno]
+            }}
         </td>
 
         <td>

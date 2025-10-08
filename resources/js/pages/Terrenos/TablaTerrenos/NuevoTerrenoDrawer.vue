@@ -28,9 +28,9 @@ const loading = ref(false);
 
 const form = reactive({
     idproyecto: '0' as string | number,
-    categoria: '' as string,
+    idcategoria: 0 as number,
     ubicacion: '' as string,
-    superficie: null as number | null,
+    superficie: '' as string,
     precio_venta: null as number | null,
     cuota_inicial: null as number | null,
     cuota_mensual: null as number | null,
@@ -145,7 +145,7 @@ async function guardarTerreno() {
                 <div>
                     <label class="mb-1 block font-medium">Categoría</label>
                     <select
-                        v-model="form.categoria"
+                        v-model="form.idcategoria"
                         class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
                     >
                         <option disabled value="">
@@ -154,7 +154,7 @@ async function guardarTerreno() {
                         <option
                             v-for="c in categorias"
                             :key="c.id"
-                            :value="c.nombre"
+                            :value="c.id"
                         >
                             {{ c.nombre }}
                         </option>
@@ -177,8 +177,8 @@ async function guardarTerreno() {
                         >Superficie (m²)</label
                     >
                     <input
-                        v-model.number="form.superficie"
-                        type="number"
+                        v-model="form.superficie"
+                        type="text"
                         min="0"
                         class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
                     />
