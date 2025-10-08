@@ -10,3 +10,5 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::get('all', [CuadraController::class, 'getAllCuadras'])->name('all');
         Route::post('postCuadras', [CuadraController::class, 'postCuadras']);
     });
+
+Route::get('UltNombreCuadra', [CuadraController::class, 'getUltNombreCuadra']);

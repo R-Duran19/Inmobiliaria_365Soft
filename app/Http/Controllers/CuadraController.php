@@ -64,4 +64,14 @@ class CuadraController extends Controller
         ]);
     }
 
+    public function getUltNombreCuadra(Request $request)
+    {
+        $nombre = Cuadra::orderBy('nombre', 'desc')->first();
+
+        return response()->json([
+            'success' => true,
+            'nombre' => $nombre ? $nombre->nombre : null,
+        ]);
+    }
+
 }
