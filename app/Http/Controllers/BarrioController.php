@@ -9,32 +9,28 @@ class BarrioController extends Controller
 {
     public function postBarrios(Request $request)
     {
-
         $request->validate([
             'idproyecto' => 'required|integer|exists:proyectos,id',
             'barrios' => 'required|array|min:1',
             'barrios.*' => 'string|max:255',
         ]);
 
-        $data = [];
-
+        $ids = [];
         foreach ($request->barrios as $nombreBarrio) {
-            $data[] = [
+            $barrio = Barrio::create([
                 'idproyecto' => $request->idproyecto,
                 'nombre' => $nombreBarrio,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+            ]);
+            $ids[] = $barrio->id;
         }
-
-        Barrio::insert($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Barrios registrados correctamente',
-            'barrios' => $data,
+            'barrios' => $ids, 
         ]);
     }
+
 
     public function getUltimoIdBarrio(Request $request)
     {

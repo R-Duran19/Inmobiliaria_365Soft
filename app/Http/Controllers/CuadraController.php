@@ -39,20 +39,22 @@ class CuadraController extends Controller
     public function postCuadras(Request $request)
     {
         $request->validate([
-            'idbarrio' => 'required|integer|exists:barrios,id',
-            'cuadras' => 'required|array|min:1',
-            'cuadras.*' => 'string|max:255',
+            '*.idbarrio' => 'required|integer|exists:barrios,id',
+            '*.cuadras' => 'required|array|min:1',
+            '*.cuadras.*' => 'string|max:255',
         ]);
 
         $data = [];
 
-        foreach ($request->cuadras as $nombreCuadra) {
-            $data[] = [
-                'idbarrio' => $request->idbarrio,
-                'nombre' => $nombreCuadra,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        foreach ($request->all() as $item) {
+            foreach ($item['cuadras'] as $nombreCuadra) {
+                $data[] = [
+                    'idbarrio' => $item['idbarrio'],
+                    'nombre' => $nombreCuadra,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
         }
 
         Cuadra::insert($data);
@@ -64,13 +66,16 @@ class CuadraController extends Controller
         ]);
     }
 
+
+
+
     public function getUltNombreCuadra(Request $request)
     {
         $nombre = Cuadra::orderBy('nombre', 'desc')->first();
 
         return response()->json([
             'success' => true,
-            'nombre' => $nombre ? $nombre->nombre : null,
+            'nombre' => $nombre ? $nombre->nombre : '1',
         ]);
     }
 

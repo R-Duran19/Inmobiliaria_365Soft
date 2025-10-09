@@ -2,12 +2,23 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 
 const emit = defineEmits(['save', 'cancel']);
 let barrios_send: { idproyecto: number; barrios: string[] } | null = null;
+
+const cantidadesCuadras = ref<number[]>([]);
+
+let barriosRegistradosIds: number[] = []; 
+
+const notificacion = reactive({
+    visible: false,
+    tipo: 'success' as 'success' | 'error',
+    mensaje: '',
+});
 
 const form = useForm({
     nombre: '',
@@ -17,7 +28,6 @@ const form = useForm({
     ubicacion: undefined as string | undefined,
     fotografia: undefined as File | string | undefined,
 });
-
 
 const uvInicio = ref(0);
 const uvFin = ref(0);
@@ -32,12 +42,20 @@ const formCuadras = useForm({
     cuadras: [] as string[],
 });
 
+function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
+    notificacion.tipo = tipo;
+    notificacion.mensaje = mensaje;
+    notificacion.visible = true;
+}
 
 const getUltimoIdProyectos = async (): Promise<{
     UltimoProyecto: number;
 } | null> => {
     try {
         const response = await axios.get(`/proyectos/ultimoId`);
+        console.log('REVISAR AQUI ', response)
+        console.log('REVISAR AQUI ', response.data)
+        console.log('REVISAR AQUI ', response.data.UltimoProyecto)
         return response.data;
     } catch (err) {
         console.error('Error al cargar último id:', err);
@@ -45,15 +63,16 @@ const getUltimoIdProyectos = async (): Promise<{
     }
 };
 
-const getUltimoIdBarrio = async (): Promise<{
-    UltimoBarrio: number;
-} | null> => {
+const getUltimoNombreCuadra = async (): Promise<string> => {
     try {
-        const response = await axios.get(`/barrios/getUltimoId`);
-        return response.data;
+        const response = await axios.get('/cuadras/UltNombreCuadra');
+        if (response.data.nombre == 1) {
+            response.data.nombre = 'MZ 000';
+        }
+        return response.data?.nombre;
     } catch (err) {
-        console.error('Error al cargar último id:', err);
-        return null;
+        console.error('Error al obtener el último nombre de cuadra:', err);
+        return 'MZ 000';
     }
 };
 
@@ -68,7 +87,7 @@ const generarUVs = async () => {
 
     const respuesta = await getUltimoIdProyectos();
     const ultimoIdProyecto = respuesta?.UltimoProyecto ?? 0;
-    console.log('MOSTRANSO ID ', ultimoIdProyecto)
+    console.log('MOSTRANSO ID ', ultimoIdProyecto);
 
     const barrios: string[] = [];
     for (let i = inicio; i <= fin; i++) {
@@ -76,30 +95,22 @@ const generarUVs = async () => {
         barrios.push(codigo);
     }
 
-    // ✅ Asignamos al formulario para que se reactive el v-if
     formBarrios.barrios = barrios;
     formCuadras.cuadras = new Array(barrios.length).fill('');
 
-
     console.log('✅ Barrios generados:', JSON.stringify(barrios_send, null, 2));
 };
-
-
 
 const handleCancel = () => {
     emit('cancel');
     form.reset();
 };
 
-
-
 const formatearMZ = (valor: string) => {
-    return `MZ ${valor.padStart(3, '0')}`
+    return `MZ ${valor.padStart(3, '0')}`;
 };
-
-
 const handleSubmit = () => {
-    console.log('proororooro ', form)
+    console.log('proororooro ', form);
     form.post('/proyectos', {
         onSuccess: () => {
             form.reset();
@@ -107,68 +118,101 @@ const handleSubmit = () => {
     });
 };
 
-
 async function guardarBarrios() {
     try {
         const response = await axios.post('/barrios/postBarrios', {
             idproyecto: formBarrios.idproyecto,
             barrios: formBarrios.barrios,
         });
-
+        console.log('Barrios registrados fasfdsafsad', response.data.barrios);
+        
+        if (response.data.barrios && Array.isArray(response.data.barrios)) {
+            barriosRegistradosIds = [
+                ...barriosRegistradosIds,
+                ...response.data.barrios,
+            ];
+        }
         console.log('Barrios registrados correctamente', response.data);
         return response.data;
     } catch (err) {
-        console.error('Error desconocido');
+        console.error('Error desconocido', err);
         throw err;
     }
 }
 
 
-async function guardarCuadras() {
-    try {
-        const response = await axios.post('/cuadras/postCuadras', {
-            idbarrio: formCuadras.idbarrio,
-            cuadras: formCuadras.cuadras,
+
+
+
+
+const generarCuadrasSecuenciales = async (idsBarriosRegistrados: number[]) => {
+    const respuestaUltima = await getUltimoNombreCuadra();
+    const ultimoNombre = respuestaUltima;
+
+
+    
+    const resultado: { idbarrio: number; cuadras: string[] }[] = [];
+
+    idsBarriosRegistrados.forEach((idBarrio, index) => {
+        const cantidad = Number(cantidadesCuadras.value[index]) || 0;
+        const cuadrasBarrio: string[] = [];
+        let contador = 0;
+
+        for (let i = 0; i < cantidad; i++) {
+            contador++;
+            const codigo = `MZ ${contador.toString().padStart(3, '0')}`;
+            cuadrasBarrio.push(codigo);
+        }
+
+        
+        resultado.push({
+            idbarrio: idBarrio, 
+            cuadras: cuadrasBarrio,
         });
+    });
 
-        console.log('Cuadras registradas correctamente', response.data);
-        formCuadras.reset();
-    } catch (err) {
-        console.error('Errores desconocido');
+    console.log('Resultado generado ✅', resultado);
+    return resultado;
+};
+
+const guardarCuadrasSecuenciales = async (idsBarriosRegistrados: number[]) => {
+    try {
+        const data = await generarCuadrasSecuenciales(idsBarriosRegistrados);
+        console.log('datos finales ', data);
+        await axios.post('/cuadras/postCuadras', data);
+        console.log('✅ Cuadras registradas correctamente');
+    } catch (error) {
+        console.error('❌ Error al registrar cuadras:', error);
     }
-}
+};
 
 
 
-async function guardarDatos(){
+async function guardarDatos() {
     await handleSubmit();
     const respuesta = await getUltimoIdProyectos();
+    console.log('ididididid ', respuesta)
     const ultimoIdProyecto = respuesta?.UltimoProyecto ?? 0;
     formBarrios.idproyecto = ultimoIdProyecto;
-    guardarBarrios()
 
-    const cuadrasFormateadas = formCuadras.cuadras.map(num => formatearMZ(num.toString()));
-    const response = await getUltimoIdBarrio()
-    const ultimoIdBarrio= response?.UltimoBarrio ?? 0;
+    const responseBarrios = await guardarBarrios();
 
-    formCuadras.cuadras = cuadrasFormateadas;
-    formCuadras.idbarrio = ultimoIdBarrio;
+    const idsBarriosRegistrados = responseBarrios.barrios;
+    console.log('XDDDDD ', idsBarriosRegistrados);
 
-    guardarCuadras()
+    await guardarCuadrasSecuenciales(idsBarriosRegistrados);
+
     emit('save');
 }
 
-function mostrar() {
-    console.log('barriooososjfdsaf ', form);
-}
+
 </script>
 
 <template>
-    <!-- Contenedor principal con scroll -->
+    
     <div class="max-h-[70vh] overflow-y-auto p-2">
-        <button @click="guardarCuadras">mostrar</button>
         <form @submit.prevent="handleSubmit" class="space-y-6">
-            <!-- Campo: Nombre del Proyecto -->
+            
             <div class="space-y-2">
                 <Label
                     for="nombre"
@@ -184,7 +228,7 @@ function mostrar() {
                 />
             </div>
 
-            <!-- Campo: Descripción -->
+            
             <div class="space-y-2">
                 <Label
                     for="descripcion"
@@ -200,9 +244,9 @@ function mostrar() {
                 />
             </div>
 
-            <!-- Campo: Barrio -->
+            
             <div class="space-y-4">
-                <!-- Rango de UVs -->
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <Label
@@ -235,7 +279,7 @@ function mostrar() {
                     </div>
                 </div>
 
-                <!-- Botón para generar -->
+                
                 <div
                     class="sticky bottom-0 border-t bg-white px-2 dark:bg-gray-800"
                 >
@@ -270,15 +314,14 @@ function mostrar() {
 
                     <Input
                         type="number"
-                        v-model="formCuadras.cuadras[index]"
+                        v-model="cantidadesCuadras[index]"
                         placeholder="Registrar cuadras"
                         class="w-28"
                     />
-
                 </div>
             </div>
 
-            <!-- Campo: Fecha de Lanzamiento -->
+            
             <div class="space-y-2">
                 <Label
                     for="fecha_lanzamiento"
@@ -293,7 +336,7 @@ function mostrar() {
                 />
             </div>
 
-            <!-- Campo: Número de Lotes -->
+            
             <div class="space-y-2">
                 <Label
                     for="numero_lotes"
@@ -308,7 +351,7 @@ function mostrar() {
                 />
             </div>
 
-            <!-- Campo: Ubicación -->
+            
             <div class="space-y-2">
                 <Label
                     for="ubicacion"
@@ -323,7 +366,7 @@ function mostrar() {
                 />
             </div>
 
-            <!-- Campo: Fotografía -->
+            
             <div class="space-y-2">
                 <Label
                     for="fotografia"
@@ -339,7 +382,7 @@ function mostrar() {
             </div>
         </form>
 
-        <!-- Contenedor fijo para los botones -->
+        
         <div
             class="sticky bottom-0 border-t bg-white px-2 py-4 dark:bg-gray-800"
         >
@@ -372,5 +415,6 @@ function mostrar() {
                 </Button>
             </div>
         </div>
+
     </div>
 </template>
