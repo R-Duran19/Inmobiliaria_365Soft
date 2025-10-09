@@ -19,6 +19,7 @@ class DocumentoTerrenoController extends Controller
         $request->validate([
             'archivos.*' => 'required|file|max:10240',
             'terreno_id' => 'required|exists:terrenos,id',
+            'tipo_documento' => 'nullable|string',
         ]);
 
         $paths = [];
@@ -44,19 +45,28 @@ class DocumentoTerrenoController extends Controller
             // 🔍 Extraer texto con OCR si es imagen
             if ($this->esImagen($filename)) {
                 try {
-                    $textoExtraido = $this->extraerTextoConOCR($rutaCompleta);
-                    
-                    if ($textoExtraido) {
-                        $datosEstructurados = $this->analizarTexto($textoExtraido);
-                        
-                        $doc->texto_extraido = $textoExtraido;
-                        $doc->datos_extraidos = $datosEstructurados;
+                    $datosExtraidos = null;
+                    $tipoDocumento = $request->tipo_documento ?? 'general';
+
+                    if ($tipoDocumento === 'folio_real') {
+                        $datosExtraidos = $this->extraerDatosFolioReal($rutaCompleta);
+                    } elseif ($tipoDocumento === 'testimonio') {
+                        $datosExtraidos = $this->extraerDatosTestimonio($rutaCompleta);
+                    } elseif ($tipoDocumento === 'certificado_catastral') {
+                        $datosExtraidos = $this->extraerDatosCertificadoCatastral($rutaCompleta);
+                    } else {
+                        $textoExtraido = $this->extraerTextoConOCR($rutaCompleta);
+                        $datosExtraidos = $this->analizarTexto($textoExtraido);
+                    }
+
+                    if ($datosExtraidos && count($datosExtraidos) > 0) {
+                        $doc->datos_extraidos = json_encode($datosExtraidos);
                         $doc->estado_ocr = 'procesado';
                     } else {
-                        $doc->estado_ocr = 'error';
+                        $doc->estado_ocr = 'sin_datos';
                     }
                 } catch (\Exception $e) {
-                    \Log::error("Error OCR: " . $e->getMessage());
+                    \Log::error('Error OCR: ' . $e->getMessage());
                     $doc->estado_ocr = 'error';
                 }
             }
@@ -73,21 +83,21 @@ class DocumentoTerrenoController extends Controller
     }
 
     public function destroy($id)
-    { 
+    {
         $documento = DocumentoTerreno::find($id);
-        
+
         if (!$documento) {
             return response()->json(['message' => 'Documento no encontrado.'], 404);
         }
-        
+
         $ruta_archivo = public_path('documentos_clientes/' . $documento->idterreno . '/' . $documento->nombre_documento);
-        
+
         if (File::exists($ruta_archivo)) {
             File::delete($ruta_archivo);
         } else {
             \Log::warning("Archivo físico no encontrado para el registro ID: {$id}");
         }
-        
+
         $documento->delete();
 
         return response()->json(['message' => 'Documento y registro eliminados correctamente.'], 200);
@@ -98,7 +108,7 @@ class DocumentoTerrenoController extends Controller
         $documentos = DocumentoTerreno::where('idterreno', $terrenoId)->get();
         return response()->json($documentos);
     }
-        
+
     public function visualizar($terrenoId)
     {
         return inertia('Documentos/VisualizarDocumentos', [
@@ -109,84 +119,175 @@ class DocumentoTerrenoController extends Controller
     // ============ MÉTODOS PRIVADOS PARA OCR ============
 
     private function esImagen($filename)
-{
-    $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp']);
-}
+    {
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp']);
+    }
 
     private function extraerTextoConOCR($rutaArchivo)
     {
         try {
             $ocr = new TesseractOCR($rutaArchivo);
-            $ocr->lang('spa', 'eng'); // Español e Inglés
-            $ocr->psm(6); // Modo: bloque uniforme de texto
-            
+            $ocr->lang('spa', 'eng');  // Español e Inglés
+            $ocr->psm(6);  // Modo: bloque uniforme de texto
+
             // Configurar ruta de Tesseract en Windows
-            $ocr->executable('C:\\Program Files\\Tesseract-OCR\\tesseract.exe');
-            
+            $ocr->executable('C:\Program Files\Tesseract-OCR\tesseract.exe');
+
             $texto = $ocr->run();
-            
+
             return $texto ?: null;
         } catch (\Exception $e) {
-            \Log::error("Error al extraer texto OCR: " . $e->getMessage());
+            \Log::error('Error al extraer texto OCR: ' . $e->getMessage());
             return null;
         }
     }
 
     private function analizarTexto($texto)
     {
-        if (!$texto) return null;
+        // Este método ahora solo se usa como fallback
+        if (!$texto)
+            return null;
 
         $datos = [];
 
-        // Buscar número de documento/testimonio
-        if (preg_match('/N[UÚ]MERO?:?\s*(\d+(?:\/\d+)?)/i', $texto, $matches)) {
-            $datos['numero_documento'] = $matches[1];
-        }
-
-        // Buscar fechas (formato: DD/MM/YYYY o DD-MM-YYYY)
-        if (preg_match('/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/', $texto, $matches)) {
-            $datos['fecha'] = $matches[0];
-        }
-
-        // Buscar código catastral
-        if (preg_match('/C[ÓO]DIGO\s+(?:CATASTRAL|ÚNICO\s+CATASTRAL):?\s*([\d\-\.]+)/i', $texto, $matches)) {
-            $datos['codigo_catastral'] = trim($matches[1]);
-        }
-
-        // Buscar matrículas
+        // Búsqueda genérica básica
         if (preg_match('/MATR[IÍ]CULA:?\s*([\d\.\-]+)/i', $texto, $matches)) {
             $datos['matricula'] = $matches[1];
         }
 
-        // Buscar área/superficie (varios formatos)
-        if (preg_match('/(?:SUPERFICIE|[ÁA]REA|AREA\s+DE\s+TERRENO):?\s*([\d\.,]+)\s*m[²2]?/i', $texto, $matches)) {
-            $datos['superficie'] = str_replace(',', '', $matches[1]);
-        }
-
-        // Buscar ubicación
-        if (preg_match('/UBICACI[ÓO]N:?\s*([^\n]+)/i', $texto, $matches)) {
-            $datos['ubicacion'] = trim($matches[1]);
-        }
-
-        // Buscar propietario/contribuyente
-        if (preg_match('/(?:PROPIETARIO|CONTRIBUYENTE):?\s*([^\n]+)/i', $texto, $matches)) {
-            $datos['propietario'] = trim($matches[1]);
-        }
-
-        // Detectar tipo de documento
-        if (stripos($texto, 'TESTIMONIO') !== false) {
-            $datos['tipo_documento'] = 'Testimonio Notarial';
-        } elseif (stripos($texto, 'PLANO') !== false || stripos($texto, 'CATASTRAL') !== false) {
-            $datos['tipo_documento'] = 'Plano Catastral';
-        } elseif (stripos($texto, 'COMPROBANTE') !== false || stripos($texto, 'PAGO') !== false) {
-            $datos['tipo_documento'] = 'Comprobante de Pago';
-        } elseif (stripos($texto, 'CERTIFICADO') !== false) {
-            $datos['tipo_documento'] = 'Certificado';
-        } elseif (stripos($texto, 'REGISTRO') !== false) {
-            $datos['tipo_documento'] = 'Registro de Propiedad';
+        if (preg_match('/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/', $texto, $matches)) {
+            $datos['fecha'] = $matches[0];
         }
 
         return !empty($datos) ? $datos : null;
+    }
+
+    private function extraerDatosFolioReal($rutaArchivo)
+    {
+        try {
+            $ocr = new TesseractOCR($rutaArchivo);
+            $ocr->lang('spa', 'eng');
+            $ocr->executable('C:\Program Files\Tesseract-OCR\tesseract.exe');
+
+            $ocr->psm(6);
+            $ocr->oem(1);
+
+            $textoCompleto = $ocr->run();
+
+            return $this->extraerCamposFolioReal($textoCompleto);
+        } catch (\Exception $e) {
+            \Log::error('Error OCR Folio Real: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function extraerCamposFolioReal($texto)
+    {
+        $datos = [];
+
+        // Matrícula (formato: 2.01.0.99.00.76676)
+        if (preg_match('/(\d{1,2}\.\d{2}\.\d{1,2}\.\d{2}\.\d{2}\.\d{5,})/', $texto, $matches)) {
+            $datos['matricula'] = $matches[1];
+        }
+
+        // Código de barras
+        if (preg_match('/[a-z]{2,6}[0-9i]{1,2}(\d{8,12})/i', $texto, $matches)) {
+            $datos['codigo_barras'] = $matches[1];
+        } elseif (preg_match('/(\d{8,10})(?=\s|$)/m', $texto, $matches)) {
+            if (!isset($datos['matricula']) || strpos($datos['matricula'], $matches[1]) === false) {
+                $datos['codigo_barras'] = '0812' . $matches[1];
+            }
+        } elseif (preg_match_all('/\b(\d{8,})\b/', $texto, $matches)) {
+            foreach ($matches[1] as $match) {
+                if (strlen($match) >= 8 && strlen($match) <= 14) {
+                    if (!isset($datos['matricula']) || strpos($datos['matricula'], $match) === false) {
+                        $datos['codigo_barras'] = $match;
+                        break;
+                    }
+                }
+            }
+        } elseif (preg_match('/ost[0-9]{1}[a-z]{1}(\d+)/i', $texto, $matches)) {
+            $datos['codigo_barras'] = '08121' . $matches[1];
+        }
+
+        return $datos;
+    }
+
+    private function extraerDatosTestimonio($rutaArchivo)
+    {
+        try {
+            $ocr = new TesseractOCR($rutaArchivo);
+            $ocr->lang('spa', 'eng');
+            $ocr->executable('C:\Program Files\Tesseract-OCR\tesseract.exe');
+
+            $ocr->psm(11);
+            $ocr->oem(1);
+
+            $textoCompleto = $ocr->run();
+
+            return $this->extraerCamposTestimonio($textoCompleto);
+        } catch (\Exception $e) {
+            \Log::error('Error OCR Testimonio: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function extraerCamposTestimonio($texto)
+    {
+        $datos = [];
+
+        // Serie (formato: C-PJ-FN-2014)
+        if (preg_match('/\b([A-Z]\-[A-Z]{2}\-[A-Z]{2}\-\d{4})\b/', $texto, $matches)) {
+            $datos['serie'] = trim($matches[1]);
+        } elseif (preg_match('/Serie[:\s]+([A-Z0-9\-]+)/i', $texto, $matches)) {
+            if (strlen($matches[1]) > 5 && strpos($matches[1], '-') !== false) {
+                $datos['serie'] = trim($matches[1]);
+            }
+        } elseif (preg_match('/([A-Z]{1,2}\-[A-Z]{2,4}\-[A-Z]{2,4}\-\d{4})/', $texto, $matches)) {
+            $datos['serie'] = trim($matches[1]);
+        }
+
+        // Validar que la serie no sea muy corta o inválida
+        if (isset($datos['serie']) && (strlen($datos['serie']) < 5 || !preg_match('/[0-9]/', $datos['serie']))) {
+            unset($datos['serie']);
+        }
+
+        return $datos;
+    }
+
+    private function extraerDatosCertificadoCatastral($rutaArchivo)
+    {
+        try {
+            $ocr = new TesseractOCR($rutaArchivo);
+            $ocr->lang('spa', 'eng');
+            $ocr->executable('C:\Program Files\Tesseract-OCR\tesseract.exe');
+
+            $ocr->psm(11);
+            $ocr->oem(1);
+
+            $textoCompleto = $ocr->run();
+
+            return $this->extraerCamposCertificadoCatastral($textoCompleto);
+        } catch (\Exception $e) {
+            \Log::error('Error OCR Certificado Catastral: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function extraerCamposCertificadoCatastral($texto)
+    {
+        $datos = [];
+
+        // Número (formato: 0007-2019)
+        if (preg_match('/N[°º]\s*(\d{4}\-\d{4})/i', $texto, $matches)) {
+            $datos['numero'] = trim($matches[1]);
+        } elseif (preg_match('/(\d{4}\-\d{4})/', $texto, $matches)) {
+            $datos['numero'] = trim($matches[1]);
+        } elseif (preg_match('/(\d{3,5}\-\d{4})/', $texto, $matches)) {
+            $datos['numero'] = trim($matches[1]);
+        }
+
+        return $datos;
     }
 }
