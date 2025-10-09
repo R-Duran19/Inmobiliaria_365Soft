@@ -1,69 +1,67 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted, computed  } from 'vue';
-import axios from 'axios';
 import { type BreadcrumbItem } from '@/types';
-
-/* === SWIPER IMPORTS === */
-const nextBtnRef = ref<HTMLDivElement | null>(null);
-const prevBtnRef = ref<HTMLDivElement | null>(null);
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation, Pagination, Autoplay, EffectCoverflow, EffectFade} from 'swiper/modules';
-
-const slidesPerView = computed(() => Math.min(3, documentos.value.length || 1));
-const enableLoop = computed(() => documentos.value.length > 3);
+import axios from 'axios';
 import 'swiper/css';
+import 'swiper/css/effect-fade';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-fade';
-/* ======================= */
-
+import {
+    Autoplay,
+    EffectCoverflow,
+    Navigation,
+    Pagination,
+} from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+const nextBtnRef = ref<HTMLDivElement | null>(null);
+const prevBtnRef = ref<HTMLDivElement | null>(null);
+const slidesPerView = computed(() => Math.min(3, documentos.value.length || 1));
+const enableLoop = computed(() => documentos.value.length > 3);
 const props = defineProps({
     terrenoId: Number,
 });
-
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Documentos', href: '/documentos' },
 ];
-
 const archivos = ref<FileList | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
-
 const notificacion = reactive({
     visible: false,
     tipo: 'success' as 'success' | 'error',
     mensaje: '',
 });
-
 const confirmModal = reactive({
     visible: false,
     documento: null as any,
 });
-
 const infoModal = reactive({
     visible: false,
     documento: null as any,
 });
-
 const documentos = ref<any[]>([]);
-
-/* === SWIPER REF (para controlar si hace falta) === */
 const swiperRef = ref<any>(null);
 function onSwiperInit(swiperInstance: any) {
     swiperRef.value = swiperInstance;
 }
-/* ================================================ */
-
 async function cargarDocumentos() {
     try {
         const res = await axios.get(`/documentos/list/${props.terrenoId}`);
-        documentos.value = res.data;
+        documentos.value = res.data.map((doc: any) => {
+            if (
+                doc.datos_extraidos &&
+                typeof doc.datos_extraidos === 'string'
+            ) {
+                doc.datos_extraidos = JSON.parse(doc.datos_extraidos);
+            }
+            return doc;
+        });
+        console.log('Documentos cargados:', documentos.value);
     } catch (error) {
         console.error('Error al cargar documentos:', error);
         mostrarNotificacion('error', 'Error al cargar los documentos.');
     }
 }
-
 onMounted(() => {
     cargarDocumentos();
     if (swiperRef.value && nextBtnRef.value && prevBtnRef.value) {
@@ -73,34 +71,29 @@ onMounted(() => {
         swiperRef.value.navigation.update();
     }
 });
-
 async function subirArchivos() {
     if (!archivos.value || archivos.value.length === 0) {
         mostrarNotificacion('error', 'Debe seleccionar al menos un archivo.');
         return;
     }
-
     const formData = new FormData();
     for (let i = 0; i < archivos.value.length; i++) {
         formData.append('archivos[]', archivos.value[i]);
     }
-
     formData.append('terreno_id', props.terrenoId?.toString() || '');
-
+    formData.append('tipo_documento', 'folio_real');
+    formData.append('tipo_documento', 'testimonio');
+    formData.append('tipo_documento', 'certificado_catastral');
     isUploading.value = true;
-
     try {
         await axios.post('/documentos/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
-
         mostrarNotificacion('success', 'Archivo(s) subido(s) correctamente.');
         archivos.value = null;
-        
         if (fileInputRef.value) {
             fileInputRef.value.value = '';
         }
-        
         await cargarDocumentos();
     } catch (error) {
         console.error('Error al subir archivos:', error);
@@ -109,24 +102,19 @@ async function subirArchivos() {
         isUploading.value = false;
     }
 }
-
 function onSlideChange(swiper: any) {
-    console.log('Índice real:', swiper.realIndex); // Siempre el slide “real”
+    console.log('Índice real:', swiper.realIndex);
 }
-
 function abrirConfirmacion(doc: any) {
     confirmModal.documento = doc;
     confirmModal.visible = true;
 }
-
 function cancelarEliminacion() {
     confirmModal.visible = false;
     confirmModal.documento = null;
 }
-
 async function confirmarEliminacion() {
     if (!confirmModal.documento) return;
-
     try {
         await axios.delete(`/documentos/${confirmModal.documento.id}`);
         mostrarNotificacion('success', 'Documento eliminado correctamente.');
@@ -139,36 +127,29 @@ async function confirmarEliminacion() {
         confirmModal.documento = null;
     }
 }
-
 function abrirInfoModal(doc: any) {
     infoModal.documento = doc;
     infoModal.visible = true;
 }
-
 function cerrarInfoModal() {
     infoModal.visible = false;
     infoModal.documento = null;
 }
-
 function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
     notificacion.tipo = tipo;
     notificacion.mensaje = mensaje;
     notificacion.visible = true;
-    
     setTimeout(() => {
         notificacion.visible = false;
     }, 3000);
 }
-
 function getFileExtension(filename: string) {
     return filename.split('.').pop()?.toLowerCase() || '';
 }
-
 function isImage(filename: string) {
     const ext = getFileExtension(filename);
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
 }
-
 function getFileIcon(filename: string) {
     const ext = getFileExtension(filename);
     const icons: Record<string, string> = {
@@ -183,88 +164,112 @@ function getFileIcon(filename: string) {
     };
     return icons[ext] || '📎';
 }
-
 function tieneInformacion(doc: any) {
-    return doc.estado_ocr === 'procesado' && doc.datos_extraidos && Object.keys(doc.datos_extraidos).length > 0;
+    return (
+        doc.estado_ocr === 'procesado' &&
+        doc.datos_extraidos &&
+        Object.keys(doc.datos_extraidos).length > 0
+    );
 }
-
-/* === Helper para obtener URL (usa la ruta que ya usabas en tu grid) === */
 function getImageUrl(doc: any) {
     return `/documentos_clientes/${props.terrenoId}/${doc.nombre_documento}`;
 }
+function descargarDocumento(doc: any) {
+    const url = `/documentos_clientes/${props.terrenoId}/${doc.nombre_documento}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = doc.nombre_documento;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+function abrirDocumento(doc: any) {
+    window.open(getImageUrl(doc), '_blank');
+}
 </script>
-
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
-            <div class="max-w-7xl mx-auto space-y-6">
-                <!-- Header -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                    <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+        <div class="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+            <div class="mx-auto max-w-7xl space-y-6">
+                <div
+                    class="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
+                    <h1
+                        class="mb-2 text-3xl font-bold text-gray-800 dark:text-gray-100"
+                    >
                         📁 Documentos del Terreno
                     </h1>
                     <p class="text-gray-600 dark:text-gray-400">
-                        Gestiona y organiza los documentos asociados a este terreno
+                        Gestiona y organiza los documentos asociados a este
+                        terreno
                     </p>
                 </div>
-
-                <!-- Upload Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <div
+                    class="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
+                    <h2
+                        class="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-800 dark:text-gray-100"
+                    >
                         <span class="text-2xl">⬆️</span>
                         Subir Nuevos Documentos
                     </h2>
-                    
                     <div class="space-y-4">
                         <div class="relative">
                             <input
                                 ref="fileInputRef"
                                 type="file"
                                 multiple
-                                @change="(e) => (archivos = (e.target as HTMLInputElement).files)"
-                                class="block w-full text-sm text-gray-600 dark:text-gray-400
-                                    file:mr-4 file:py-3 file:px-6
-                                    file:rounded-full file:border-0
-                                    file:text-sm file:font-semibold
-                                    file:bg-blue-50 file:text-blue-700
-                                    dark:file:bg-blue-900/30 dark:file:text-blue-400
-                                    hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50
-                                    cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600
-                                    rounded-xl p-4 hover:border-blue-400 dark:hover:border-blue-500 
-                                    transition-colors bg-gray-50 dark:bg-gray-900"
+                                @change="
+                                    (e) =>
+                                        (archivos = (
+                                            e.target as HTMLInputElement
+                                        ).files)
+                                "
+                                class="block w-full cursor-pointer rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600 transition-colors file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-6 file:py-3 file:text-sm file:font-semibold file:text-blue-700 hover:border-blue-400 hover:file:bg-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-400 dark:file:bg-blue-900/30 dark:file:text-blue-400 dark:hover:border-blue-500 dark:hover:file:bg-blue-900/50"
                             />
                         </div>
-
                         <button
                             @click="subirArchivos"
                             :disabled="isUploading"
-                            class="bg-gradient-to-r from-green-500 to-green-600 text-white 
-                                px-6 py-3 rounded-xl font-semibold
-                                hover:from-green-600 hover:to-green-700 
-                                disabled:opacity-50 disabled:cursor-not-allowed
-                                transition-all duration-200 shadow-md hover:shadow-lg
-                                flex items-center gap-2"
+                            class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 font-semibold text-white shadow-md transition-all duration-200 hover:from-green-600 hover:to-green-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <span v-if="!isUploading">✓ Subir Archivos</span>
                             <span v-else>⏳ Subiendo...</span>
                         </button>
                     </div>
                 </div>
-
-                <div v-if="documentos.length" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <div
+                    v-if="documentos.length"
+                    class="rounded-2xl border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
+                    <h2
+                        class="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-100"
+                    >
                         <span class="text-2xl">🎞️</span>
                         Vista en Carrusel
-                        <span class="ml-auto text-sm text-gray-500 dark:text-gray-400">{{ documentos.length }} items</span>
+                        <span
+                            class="ml-auto text-sm text-gray-500 dark:text-gray-400"
+                            >{{ documentos.length }} items</span
+                        >
                     </h2>
-
-                    <div class="max-w-4xl mx-auto">
+                    <div class="mx-auto max-w-4xl">
                         <swiper
-                            :modules="[Navigation, Pagination, Autoplay, EffectCoverflow]"
-                            :navigation="{ nextEl: nextBtnRef, prevEl: prevBtnRef }"
+                            :modules="[
+                                Navigation,
+                                Pagination,
+                                Autoplay,
+                                EffectCoverflow,
+                            ]"
+                            :navigation="{
+                                nextEl: nextBtnRef,
+                                prevEl: prevBtnRef,
+                            }"
                             @slideChange="onSlideChange"
                             :pagination="{ clickable: true }"
-                            :autoplay="{ delay: 5000, disableOnInteraction: false }"
+                            :autoplay="{
+                                delay: 5000,
+                                disableOnInteraction: false,
+                            }"
                             effect="coverflow"
                             :centeredSlides="true"
                             :slidesPerView="slidesPerView"
@@ -274,100 +279,112 @@ function getImageUrl(doc: any) {
                                 stretch: 0,
                                 depth: 100,
                                 modifier: 1,
-                                slideShadows: true
+                                slideShadows: true,
                             }"
                         >
-
-                        <SwiperSlide
-                            v-for="doc in documentos"
-                            :key="doc.id"
-                            class="relative"
-                        >
-                            <div class="relative w-full h-94 md:h-96 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-xl">
-                            <img
-                                v-if="isImage(doc.nombre_documento)"
-                                :src="getImageUrl(doc)"
-                                :alt="doc.nombre_documento"
-                                class="w-full h-full object-contain bg-gray-100"
-                            />
-                            <div v-else class="flex flex-col items-center gap-3">
-                                <div class="text-8xl select-none">{{ getFileIcon(doc.nombre_documento) }}</div>
-                                <p class="text-sm font-medium text-center break-words px-4">{{ doc.nombre_documento }}</p>
-                                <a
-                                :href="getImageUrl(doc)"
-                                target="_blank"
-                                rel="noopener"
-                                class="mt-2 inline-block px-3 py-1 rounded-full bg-white/90 text-gray-900 font-medium"
+                            <SwiperSlide
+                                v-for="doc in documentos"
+                                :key="doc.id"
+                                class="relative"
+                            >
+                                <div
+                                    class="relative flex h-94 w-full items-center justify-center overflow-hidden rounded-xl bg-gray-100 md:h-96 dark:bg-gray-800"
                                 >
-                                Abrir documento
-                                </a>
-                            </div>
-                            </div>
-                        </SwiperSlide>
-                        <div ref="nextBtnRef" class="swiper-button-next text-gray-800 dark:text-gray-100"></div>
-                        <div ref="prevBtnRef" class="swiper-button-prev text-gray-800 dark:text-gray-100"></div>
+                                    <img
+                                        v-if="isImage(doc.nombre_documento)"
+                                        :src="getImageUrl(doc)"
+                                        :alt="doc.nombre_documento"
+                                        class="h-full w-full bg-gray-100 object-contain"
+                                    />
+                                    <div
+                                        v-else
+                                        class="flex flex-col items-center gap-3"
+                                    >
+                                        <div class="text-8xl select-none">
+                                            {{
+                                                getFileIcon(
+                                                    doc.nombre_documento,
+                                                )
+                                            }}
+                                        </div>
+                                        <p
+                                            class="px-4 text-center text-sm font-medium break-words"
+                                        >
+                                            {{ doc.nombre_documento }}
+                                        </p>
+                                        <button
+                                            @click="abrirDocumento(doc)"
+                                            class="mt-2 inline-block cursor-pointer rounded-full bg-white/90 px-3 py-1 font-medium text-gray-900 hover:bg-white"
+                                        >
+                                            Abrir documento
+                                        </button>
+                                    </div>
+                                </div>
+                            </SwiperSlide>
+                            <div
+                                ref="nextBtnRef"
+                                class="swiper-button-next text-gray-800 dark:text-gray-100"
+                            ></div>
+                            <div
+                                ref="prevBtnRef"
+                                class="swiper-button-prev text-gray-800 dark:text-gray-100"
+                            ></div>
                         </swiper>
                     </div>
                 </div>
-
-
-
-
-                <!-- Documents Grid (tu grid original) -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
+                <div
+                    class="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
+                    <h2
+                        class="mb-6 flex items-center gap-2 text-xl font-semibold text-gray-800 dark:text-gray-100"
+                    >
                         <span class="text-2xl">📚</span>
                         Documentos Almacenados
-                        <span class="ml-auto text-sm font-normal text-gray-500 dark:text-gray-400">
+                        <span
+                            class="ml-auto text-sm font-normal text-gray-500 dark:text-gray-400"
+                        >
                             {{ documentos.length }} archivo(s)
                         </span>
                     </h2>
-
-                    <!-- Empty State -->
                     <div
                         v-if="documentos.length === 0"
-                        class="text-center py-16 text-gray-400 dark:text-gray-500"
+                        class="py-16 text-center text-gray-400 dark:text-gray-500"
                     >
-                        <div class="text-6xl mb-4">📭</div>
+                        <div class="mb-4 text-6xl">📭</div>
                         <p class="text-lg">No hay documentos subidos todavía</p>
-                        <p class="text-sm mt-2">Sube tu primer documento usando el formulario superior</p>
+                        <p class="mt-2 text-sm">
+                            Sube tu primer documento usando el formulario
+                            superior
+                        </p>
                     </div>
-
-                    <!-- Documents Grid -->
                     <div
                         v-else
-                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
                     >
                         <div
                             v-for="doc in documentos"
                             :key="doc.id"
-                            class="group relative bg-gray-50 dark:bg-gray-700/50
-                                rounded-xl overflow-hidden shadow-md hover:shadow-xl 
-                                transition-all duration-300 border border-gray-200 dark:border-gray-600
-                                hover:scale-105"
+                            class="group relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl dark:border-gray-600 dark:bg-gray-700/50"
                         >
-                            <!-- Image/Icon Preview -->
-                            <div class="relative h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                            <div
+                                class="relative flex h-48 items-center justify-center overflow-hidden bg-gray-100 dark:bg-gray-700"
+                            >
                                 <img
                                     v-if="isImage(doc.nombre_documento)"
                                     :src="`/documentos_clientes/${props.terrenoId}/${doc.nombre_documento}`"
                                     :alt="doc.nombre_documento"
-                                    class="w-full h-full object-cover"
+                                    class="h-full w-full object-cover"
                                 />
-                                <div
-                                    v-else
-                                    class="text-6xl"
-                                >
+                                <div v-else class="text-6xl">
                                     {{ getFileIcon(doc.nombre_documento) }}
                                 </div>
-
-                                <!-- Botones de acción overlay -->
-                                <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                    <!-- Botón Ver Información -->
+                                <div
+                                    class="absolute top-2 right-2 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                                >
                                     <button
                                         v-if="tieneInformacion(doc)"
                                         @click="abrirInfoModal(doc)"
-                                        class="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 shadow-lg"
+                                        class="rounded-full bg-blue-500 p-2 text-white shadow-lg hover:bg-blue-600"
                                         title="Ver información extraída"
                                     >
                                         <svg
@@ -376,15 +393,19 @@ function getImageUrl(doc: any) {
                                             viewBox="0 0 20 20"
                                             fill="currentColor"
                                         >
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            <path
+                                                d="M10 12a2 2 0 100-4 2 2 0 000 4z"
+                                            />
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                                clip-rule="evenodd"
+                                            />
                                         </svg>
                                     </button>
-
-                                    <!-- Botón Eliminar -->
                                     <button
                                         @click="abrirConfirmacion(doc)"
-                                        class="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 shadow-lg"
+                                        class="rounded-full bg-red-500 p-2 text-white shadow-lg hover:bg-red-600"
                                         title="Eliminar documento"
                                     >
                                         <svg
@@ -400,40 +421,56 @@ function getImageUrl(doc: any) {
                                             />
                                         </svg>
                                     </button>
-                                    <!-- Botón Descargar -->
-                                    <a
-                                        :href="`/documentos_clientes/${props.terrenoId}/${doc.nombre_documento}`"
-                                        download
-                                        class="bg-green-500 text-white rounded-full p-2 hover:bg-green-600 shadow-lg flex items-center justify-center"
+                                    <button
+                                        @click="descargarDocumento(doc)"
+                                        class="flex items-center justify-center rounded-full bg-green-500 p-2 text-white shadow-lg hover:bg-green-600"
                                         title="Descargar documento"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M3 14a1 1 0 011-1h3v-4a1 1 0 112 0v4h3a1 1 0 110 2H4a1 1 0 01-1-1zm7-8a1 1 0 011 1v4h-2V7a1 1 0 011-1z" clip-rule="evenodd"/>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                                clip-rule="evenodd"
+                                            />
                                         </svg>
-                                    </a>
+                                    </button>
                                 </div>
-
-                                <!-- Badge de estado OCR -->
-                                <div v-if="doc.estado_ocr === 'procesado' && tieneInformacion(doc)" 
-                                     class="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                                <div
+                                    v-if="
+                                        doc.estado_ocr === 'procesado' &&
+                                        tieneInformacion(doc)
+                                    "
+                                    class="absolute bottom-2 left-2 rounded-full bg-green-500 px-2 py-1 text-xs text-white shadow-lg"
+                                >
                                     ✓ Escaneado
                                 </div>
-                                <div v-else-if="doc.estado_ocr === 'error'" 
-                                     class="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                                <div
+                                    v-else-if="doc.estado_ocr === 'error'"
+                                    class="absolute bottom-2 left-2 rounded-full bg-red-500 px-2 py-1 text-xs text-white shadow-lg"
+                                >
                                     ✕ Error OCR
                                 </div>
                             </div>
-
-                            <!-- Document Info -->
-                            <div class="p-4 bg-white dark:bg-gray-800">
+                            <div class="bg-white p-4 dark:bg-gray-800">
                                 <p
-                                    class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate"
+                                    class="truncate text-sm font-medium text-gray-800 dark:text-gray-200"
                                     :title="doc.nombre_documento"
                                 >
                                     {{ doc.nombre_documento }}
                                 </p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ new Date(doc.created_at).toLocaleDateString('es-ES') }}
+                                <p
+                                    class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                                >
+                                    {{
+                                        new Date(
+                                            doc.created_at,
+                                        ).toLocaleDateString('es-ES')
+                                    }}
                                 </p>
                             </div>
                         </div>
@@ -441,8 +478,6 @@ function getImageUrl(doc: any) {
                 </div>
             </div>
         </div>
-
-        <!-- Modal de Información Extraída -->
         <Transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 scale-90"
@@ -456,19 +491,21 @@ function getImageUrl(doc: any) {
                 class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                 @click="cerrarInfoModal"
             >
-                <!-- Overlay -->
-                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-                <!-- Modal -->
+                <div
+                    class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                ></div>
                 <div
                     @click.stop
-                    class="relative z-10 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform max-h-[90vh] overflow-y-auto"
+                    class="relative z-10 max-h-[90vh] w-full max-w-2xl transform overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-gray-800"
                 >
-                    <!-- Cabecera -->
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4">
+                    <div
+                        class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-center"
+                    >
+                        <div
+                            class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white"
+                        >
                             <svg
-                                class="w-8 h-8 text-blue-600"
+                                class="h-8 w-8 text-blue-600"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -484,95 +521,169 @@ function getImageUrl(doc: any) {
                         <h3 class="text-2xl font-bold text-white">
                             Información Extraída
                         </h3>
-                        <p class="text-white/80 text-sm mt-2">{{ infoModal.documento?.nombre_documento }}</p>
+                        <p class="mt-2 text-sm text-white/80">
+                            {{ infoModal.documento?.nombre_documento }}
+                        </p>
                     </div>
-
-                    <!-- Contenido -->
                     <div class="p-6">
-                        <div v-if="infoModal.documento?.datos_extraidos" class="space-y-4">
-                            <!-- Tipo de documento -->
-                            <div v-if="infoModal.documento.datos_extraidos.tipo_documento" 
-                                 class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Tipo de Documento</p>
-                                <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                    {{ infoModal.documento.datos_extraidos.tipo_documento }}
-                                </p>
+                        <div
+                            v-if="infoModal.documento?.datos_extraidos"
+                            class="space-y-4"
+                        >
+                            <div
+                                v-if="
+                                    infoModal.documento.datos_extraidos
+                                        .matricula ||
+                                    infoModal.documento.datos_extraidos
+                                        .codigo_barras
+                                "
+                                class="space-y-4"
+                            >
+                                <div
+                                    class="rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20"
+                                >
+                                    <p
+                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        Tipo de Documento
+                                    </p>
+                                    <p
+                                        class="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                                    >
+                                        Folio Real
+                                    </p>
+                                </div>
+                                <div
+                                    class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                                >
+                                    <div
+                                        v-if="
+                                            infoModal.documento.datos_extraidos
+                                                .matricula
+                                        "
+                                        class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
+                                    >
+                                        <p
+                                            class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                        >
+                                            Matrícula
+                                        </p>
+                                        <p
+                                            class="font-semibold text-gray-900 dark:text-gray-100"
+                                        >
+                                            {{
+                                                infoModal.documento
+                                                    .datos_extraidos.matricula
+                                            }}
+                                        </p>
+                                    </div>
+                                    <div
+                                        v-if="
+                                            infoModal.documento.datos_extraidos
+                                                .codigo_barras
+                                        "
+                                        class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
+                                    >
+                                        <p
+                                            class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                        >
+                                            Código de Barras
+                                        </p>
+                                        <p
+                                            class="font-semibold text-gray-900 dark:text-gray-100"
+                                        >
+                                            {{
+                                                infoModal.documento
+                                                    .datos_extraidos
+                                                    .codigo_barras
+                                            }}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-
-                            <!-- Grid de datos -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div v-if="infoModal.documento.datos_extraidos.numero_documento" 
-                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Número de Documento</p>
-                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ infoModal.documento.datos_extraidos.numero_documento }}
+                            <div
+                                v-if="infoModal.documento.datos_extraidos.serie"
+                                class="space-y-4"
+                            >
+                                <div
+                                    class="rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20"
+                                >
+                                    <p
+                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        Tipo de Documento
+                                    </p>
+                                    <p
+                                        class="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                                    >
+                                        Testimonio de Propiedad
                                     </p>
                                 </div>
-
-                                <div v-if="infoModal.documento.datos_extraidos.fecha" 
-                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Fecha</p>
-                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ infoModal.documento.datos_extraidos.fecha }}
+                                <div
+                                    class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
+                                >
+                                    <p
+                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        Serie
                                     </p>
-                                </div>
-
-                                <div v-if="infoModal.documento.datos_extraidos.codigo_catastral" 
-                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Código Catastral</p>
-                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ infoModal.documento.datos_extraidos.codigo_catastral }}
-                                    </p>
-                                </div>
-
-                                <div v-if="infoModal.documento.datos_extraidos.matricula" 
-                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Matrícula</p>
-                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ infoModal.documento.datos_extraidos.matricula }}
-                                    </p>
-                                </div>
-
-                                <div v-if="infoModal.documento.datos_extraidos.superficie" 
-                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Superficie</p>
-                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ infoModal.documento.datos_extraidos.superficie }} m²
-                                    </p>
-                                </div>
-
-                                <div v-if="infoModal.documento.datos_extraidos.propietario" 
-                                     class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Propietario</p>
-                                    <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                        {{ infoModal.documento.datos_extraidos.propietario }}
+                                    <p
+                                        class="font-semibold text-gray-900 dark:text-gray-100"
+                                    >
+                                        {{
+                                            infoModal.documento.datos_extraidos
+                                                .serie
+                                        }}
                                     </p>
                                 </div>
                             </div>
-
-                            <!-- Ubicación (ocupa todo el ancho) -->
-                            <div v-if="infoModal.documento.datos_extraidos.ubicacion" 
-                                 class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Ubicación</p>
-                                <p class="font-semibold text-gray-900 dark:text-gray-100">
-                                    {{ infoModal.documento.datos_extraidos.ubicacion }}
-                                </p>
+                            <div
+                                v-if="
+                                    infoModal.documento.datos_extraidos.numero
+                                "
+                                class="space-y-4"
+                            >
+                                <div
+                                    class="rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20"
+                                >
+                                    <p
+                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        Tipo de Documento
+                                    </p>
+                                    <p
+                                        class="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                                    >
+                                        Certificado Catastral
+                                    </p>
+                                </div>
+                                <div
+                                    class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
+                                >
+                                    <p
+                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        Número
+                                    </p>
+                                    <p
+                                        class="font-semibold text-gray-900 dark:text-gray-100"
+                                    >
+                                        {{
+                                            infoModal.documento.datos_extraidos
+                                                .numero
+                                        }}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-
-                        <div v-else class="text-center py-8 text-gray-500">
+                        <div v-else class="py-8 text-center text-gray-500">
                             No se pudo extraer información de este documento
                         </div>
                     </div>
-
-                    <!-- Footer -->
                     <div class="p-6 pt-0">
                         <button
                             @click="cerrarInfoModal"
-                            class="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 
-                                text-gray-700 dark:text-gray-300 rounded-xl font-semibold
-                                hover:bg-gray-200 dark:hover:bg-gray-600 
-                                transition-colors duration-200"
+                            class="w-full rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-700 transition-colors duration-200 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                         >
                             Cerrar
                         </button>
@@ -580,8 +691,6 @@ function getImageUrl(doc: any) {
                 </div>
             </div>
         </Transition>
-
-        <!-- Modal de Confirmación de Eliminación -->
         <Transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 scale-90"
@@ -595,16 +704,21 @@ function getImageUrl(doc: any) {
                 class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                 @click="cancelarEliminacion"
             >
-                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
+                <div
+                    class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                ></div>
                 <div
                     @click.stop
-                    class="relative z-10 w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform"
+                    class="relative z-10 w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800"
                 >
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 p-6 text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4">
+                    <div
+                        class="bg-gradient-to-br from-red-500 to-red-600 p-6 text-center"
+                    >
+                        <div
+                            class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-white"
+                        >
                             <svg
-                                class="w-8 h-8 text-red-600"
+                                class="h-8 w-8 text-red-600"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -621,35 +735,33 @@ function getImageUrl(doc: any) {
                             ¿Eliminar documento?
                         </h3>
                     </div>
-
                     <div class="p-6">
-                        <p class="text-gray-600 dark:text-gray-300 text-center mb-2">
+                        <p
+                            class="mb-2 text-center text-gray-600 dark:text-gray-300"
+                        >
                             ¿Está seguro de eliminar el documento?
                         </p>
-                        <p class="text-gray-800 dark:text-gray-100 font-semibold text-center mb-6 break-words">
+                        <p
+                            class="mb-6 text-center font-semibold break-words text-gray-800 dark:text-gray-100"
+                        >
                             "{{ confirmModal.documento?.nombre_documento }}"
                         </p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+                        <p
+                            class="text-center text-sm text-gray-500 dark:text-gray-400"
+                        >
                             Esta acción no se puede deshacer
                         </p>
                     </div>
-
                     <div class="flex gap-3 p-6 pt-0">
                         <button
                             @click="cancelarEliminacion"
-                            class="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 
-                                text-gray-700 dark:text-gray-300 rounded-xl font-semibold
-                                hover:bg-gray-200 dark:hover:bg-gray-600 
-                                transition-colors duration-200"
+                            class="flex-1 rounded-xl bg-gray-100 px-6 py-3 font-semibold text-gray-700 transition-colors duration-200 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                         >
                             Cancelar
                         </button>
                         <button
                             @click="confirmarEliminacion"
-                            class="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 
-                                text-white rounded-xl font-semibold
-                                hover:from-red-600 hover:to-red-700 
-                                transition-all duration-200 shadow-lg hover:shadow-xl"
+                            class="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-xl"
                         >
                             Eliminar
                         </button>
@@ -657,8 +769,6 @@ function getImageUrl(doc: any) {
                 </div>
             </div>
         </Transition>
-
-        <!-- Notificación Custom -->
         <Transition
             enter-active-class="transition ease-out duration-300 transform"
             enter-from-class="translate-x-full opacity-0"
@@ -669,41 +779,45 @@ function getImageUrl(doc: any) {
         >
             <div
                 v-if="notificacion.visible"
-                class="fixed top-6 right-6 z-[9999] max-w-md w-auto min-w-[320px]"
+                class="fixed top-6 right-6 z-[9999] w-auto max-w-md min-w-[320px]"
             >
                 <div
                     :class="[
-                        'rounded-xl shadow-2xl text-white overflow-hidden',
-                        notificacion.tipo === 'success' 
-                            ? 'bg-gradient-to-r from-green-500 to-green-600' 
-                            : 'bg-gradient-to-r from-red-500 to-red-600'
+                        'overflow-hidden rounded-xl text-white shadow-2xl',
+                        notificacion.tipo === 'success'
+                            ? 'bg-gradient-to-r from-green-500 to-green-600'
+                            : 'bg-gradient-to-r from-red-500 to-red-600',
                     ]"
                 >
-                    <div class="flex items-start p-4 gap-3">
+                    <div class="flex items-start gap-3 p-4">
                         <div
                             :class="[
-                                'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold shadow-lg',
-                                notificacion.tipo === 'success' ? 'bg-green-600' : 'bg-red-600'
+                                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-xl font-bold shadow-lg',
+                                notificacion.tipo === 'success'
+                                    ? 'bg-green-600'
+                                    : 'bg-red-600',
                             ]"
                         >
                             {{ notificacion.tipo === 'success' ? '✓' : '✕' }}
                         </div>
-
                         <div class="flex-1 pt-0.5">
-                            <h3 class="font-semibold text-base mb-1">
-                                {{ notificacion.tipo === 'success' ? 'Éxito' : 'Error' }}
+                            <h3 class="mb-1 text-base font-semibold">
+                                {{
+                                    notificacion.tipo === 'success'
+                                        ? 'Éxito'
+                                        : 'Error'
+                                }}
                             </h3>
-                            <p class="text-sm text-white/95 leading-relaxed">
+                            <p class="text-sm leading-relaxed text-white/95">
                                 {{ notificacion.mensaje }}
                             </p>
                         </div>
-
                         <button
                             @click="notificacion.visible = false"
-                            class="flex-shrink-0 text-white/70 hover:text-white transition-colors rounded-lg p-1 hover:bg-white/10"
+                            class="flex-shrink-0 rounded-lg p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                         >
                             <svg
-                                class="w-5 h-5"
+                                class="h-5 w-5"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -717,10 +831,9 @@ function getImageUrl(doc: any) {
                             </svg>
                         </button>
                     </div>
-
                     <div class="h-1 bg-white/20">
                         <div
-                            class="h-full bg-white/50 notification-progress"
+                            class="notification-progress h-full bg-white/50"
                         ></div>
                     </div>
                 </div>
@@ -728,7 +841,6 @@ function getImageUrl(doc: any) {
         </Transition>
     </AppLayout>
 </template>
-
 <style scoped>
 @keyframes fadeIn {
     from {
@@ -740,11 +852,9 @@ function getImageUrl(doc: any) {
         transform: translateY(0);
     }
 }
-
 .group:hover {
     animation: fadeIn 0.3s ease-out;
 }
-
 @keyframes notificationProgress {
     from {
         width: 100%;
@@ -753,7 +863,6 @@ function getImageUrl(doc: any) {
         width: 0%;
     }
 }
-
 .notification-progress {
     animation: notificationProgress 3s linear forwards;
 }
