@@ -55,5 +55,4 @@ class BarrioController extends Controller
             'barrios' => $barrios,
         ]);
     }
-
 }

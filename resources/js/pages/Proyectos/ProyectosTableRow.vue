@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -22,10 +22,20 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['refresh']);
-
+const numeroBarrios = ref(null);
 const editDialogOpen = ref(false);
 const fotoDialogOpen = ref(false);
 const imageError = ref(false);
+
+const getNumeroBarrios = async () => {
+  try {
+    const response = await axios.get(`/barrios/proyecto/${props.proyecto.id}`);
+    numeroBarrios.value = response.data.barrios.length;
+  } catch (error) {
+    console.error('Error al obtener los barrios del proyecto:', error);
+    numeroBarrios.value = '—'; // Mostrar guion si falla
+  }
+};
 
 const eliminarProyecto = async () => {
   if (confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
@@ -63,6 +73,10 @@ const handleImageError = () => {
   imageError.value = true;
   console.error('Error al cargar imagen:', props.proyecto.fotografia);
 };
+
+onMounted(() => {
+  getNumeroBarrios();
+});
 </script>
 
 <template>
@@ -124,6 +138,10 @@ const handleImageError = () => {
     <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
       {{ proyecto.nombre }}
     </td>
+    <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
+      {{ numeroBarrios !== null ? numeroBarrios : 'Cargando...' }}
+    </td>
+
     <td class="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">
       {{ proyecto.fecha_lanzamiento ? new Date(proyecto.fecha_lanzamiento).toLocaleDateString() : '—' }}
     </td>
