@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import { ref, onMounted, computed } from 'vue';
-import MapaTerrenos from '../../components/mapas/MapaTerrenos.vue';
+import MapaTerrenos from './MapaTerrenos.vue';
 import axios from 'axios';
 
 interface Props {

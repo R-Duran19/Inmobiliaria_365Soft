@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('proyectos', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre'); 
-            $table->text('descripcion')->nullable(); 
+            $table->string('nombre');
+            $table->text('descripcion')->nullable();
             $table->boolean('estado')->default(true);
+            $table->geometry('poligono', 'polygon')->nullable();
             $table->timestamps();
         });
     }

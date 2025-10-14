@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 
 class Proyecto extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSpatial;
 
     protected $fillable = [
         'nombre',
@@ -17,11 +19,13 @@ class Proyecto extends Model
         'ubicacion',
         'fotografia',
         'estado',
+        'poligono',
     ];
 
     protected $casts = [
         'estado' => 'boolean',
         'fecha_lanzamiento' => 'date',
+        'poligono' => Polygon::class,
     ];
 
     protected $attributes = [
@@ -32,9 +36,6 @@ class Proyecto extends Model
         return $this->hasMany(Terreno::class, 'idproyecto');
     }
 
-    /**
-     * Terrenos disponibles
-     */
     public function terrenosDisponibles()
     {
         return $this->hasMany(Terreno::class, 'idproyecto')
@@ -42,12 +43,13 @@ class Proyecto extends Model
             ->where('condicion', true);
     }
 
-    /**
-     * Terrenos vendidos
-     */
     public function terrenosVendidos()
     {
         return $this->hasMany(Terreno::class, 'idproyecto')
             ->where('estado', 1);
     }
+    public function barrios()
+{
+    return $this->hasMany(Barrio::class, 'idproyecto');
+}
 }

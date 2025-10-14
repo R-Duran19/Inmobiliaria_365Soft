@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('idbarrio');
             $table->string('nombre');
+            $table->geometry('poligono', 'polygon')->nullable();
             $table->timestamps();
 
             $table->foreign('idbarrio')->references('id')->on('barrios')->onDelete('cascade');

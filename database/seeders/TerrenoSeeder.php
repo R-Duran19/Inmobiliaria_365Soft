@@ -15,8 +15,10 @@ class TerrenoSeeder extends Seeder
         // Terreno 1 - Polígono grande principal
         Terreno::create([
             'idproyecto' => 1,
-            'ubicacion' => 'Zona Norte',
             'idcategoria' => 1,
+            'idcuadra' => 1,
+            'ubicacion' => 'Zona Norte',
+            'numero_terreno' => '001',            
             'superficie' => '500 m²',
             'cuota_inicial' => 10000.00,
             'cuota_mensual' => 500.00,
@@ -50,12 +52,14 @@ class TerrenoSeeder extends Seeder
         // Terreno 2 - Polígono pequeño superior
         Terreno::create([
             'idproyecto' => 1,
+            'idcategoria' => 1,
+            'idcuadra' => 2,
             'ubicacion' => 'Zona Norte',
-            'idcategoria' => 2,
-            'superficie' => '150 m²',
-            'cuota_inicial' => 8000.00,
-            'cuota_mensual' => 400.00,
-            'precio_venta' => 40000.00,
+            'numero_terreno' => '002',            
+            'superficie' => '500 m²',
+            'cuota_inicial' => 10000.00,
+            'cuota_mensual' => 500.00,
+            'precio_venta' => 50000.00,
             'estado' => 1,
             'condicion' => true,
             'poligono' => new Polygon([
@@ -71,12 +75,14 @@ class TerrenoSeeder extends Seeder
 
         Terreno::create([
             'idproyecto' => 1,
-            'ubicacion' => 'Zona Sur',
-            'idcategoria' => 1,
-            'superficie' => '80 m²',
-            'cuota_inicial' => 5000.00,
-            'cuota_mensual' => 300.00,
-            'precio_venta' => 30000.00,
+            'idcategoria' => 2,
+            'idcuadra' => 1,
+            'ubicacion' => 'Zona Norte',
+            'numero_terreno' => '003',            
+            'superficie' => '500 m²',
+            'cuota_inicial' => 10000.00,
+            'cuota_mensual' => 500.00,
+            'precio_venta' => 50000.00,
             'estado' => 1,
             'condicion' => true,
             'poligono' => new Polygon([
