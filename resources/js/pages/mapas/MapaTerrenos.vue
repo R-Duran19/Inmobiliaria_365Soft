@@ -154,7 +154,9 @@ const cargarTerrenos = async () => {
 };
 
 // Limpiar todas las capas del mapa
+// Limpiar todas las capas del mapa
 const limpiarCapas = () => {
+  // Remover layers GeoJSON
   if (barriosLayer && map) {
     map.removeLayer(barriosLayer);
     barriosLayer = null;
@@ -167,9 +169,19 @@ const limpiarCapas = () => {
     map.removeLayer(terrenosLayer);
     terrenosLayer = null;
   }
+  
+  // 🆕 CRÍTICO: Limpiar TODOS los tooltips/labels permanentes
+  if (map) {
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Tooltip) {
+        map?.removeLayer(layer);
+      }
+    });
+  }
 };
 
 // Dibujar barrios (zoom < 7)
+// Dibujar barrios (zoom < 14)
 const dibujarBarrios = () => {
   if (!map || barrios.value.length === 0) return;
   
@@ -193,21 +205,30 @@ const dibujarBarrios = () => {
       
       const popupContent = `
         <div style="font-family: sans-serif; min-width: 200px; color: ${textColor};">
-          <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">
+          <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold;">
             ${props.nombre}
           </h3>
-          <p style="margin: 5px 0; font-size: 14px; color: #3b82f6;">
-            <strong>Barrio</strong>
-          </p>
-          <p style="margin: 5px 0; font-size: 12px; color: #6b7280;">
-            Acerca el zoom para ver más detalles
-          </p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Tipo:</strong> Barrio</p>
         </div>
       `;
+      
+      layer.bindPopup(popupContent);
 
-      layer.bindPopup(popupContent, { maxWidth: 300 });
-      layer.on('mouseover', () => (layer as L.Path).setStyle({ weight: 5, fillOpacity: 0.3 }));
-      layer.on('mouseout', () => (layer as L.Path).setStyle({ weight: 3, fillOpacity: 0.2 }));
+      // Label permanente
+      const bounds = (layer as L.Polygon).getBounds();
+      const center = bounds.getCenter();
+      
+      const label = L.tooltip({
+        permanent: true,
+        direction: 'center',
+        className: 'polygon-label barrio-label',
+      })
+        .setLatLng(center)
+        .setContent(`<div style="font-weight: 700; font-size: 14px;">${props.nombre}</div>`);
+      
+      if (map) {
+        label.addTo(map);
+      }
     },
   }).addTo(map);
 
@@ -215,6 +236,7 @@ const dibujarBarrios = () => {
 };
 
 // Dibujar cuadras (zoom 7-14)
+// Dibujar cuadras (zoom 14-16)
 const dibujarCuadras = () => {
   if (!map || cuadras.value.length === 0) return;
   
@@ -238,21 +260,30 @@ const dibujarCuadras = () => {
       
       const popupContent = `
         <div style="font-family: sans-serif; min-width: 200px; color: ${textColor};">
-          <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">
+          <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold;">
             ${props.nombre}
           </h3>
-          <p style="margin: 5px 0; font-size: 14px;">
-            <strong>Barrio:</strong> ${props.barrio || 'N/A'}
-          </p>
-          <p style="margin: 5px 0; font-size: 12px; color: #6b7280;">
-            Acerca más para ver terrenos individuales
-          </p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Barrio:</strong> ${props.barrio || 'N/A'}</p>
         </div>
       `;
+      
+      layer.bindPopup(popupContent);
 
-      layer.bindPopup(popupContent, { maxWidth: 300 });
-      layer.on('mouseover', () => (layer as L.Path).setStyle({ weight: 4, fillOpacity: 0.5 }));
-      layer.on('mouseout', () => (layer as L.Path).setStyle({ weight: 2, fillOpacity: 0.3 }));
+      // Label permanente
+      const bounds = (layer as L.Polygon).getBounds();
+      const center = bounds.getCenter();
+      
+      const label = L.tooltip({
+        permanent: true,
+        direction: 'center',
+        className: 'polygon-label cuadra-label',
+      })
+        .setLatLng(center)
+        .setContent(`<div style="font-weight: 700; font-size: 12px;">${props.nombre}</div>`);
+      
+      if (map) {
+        label.addTo(map);
+      }
     },
   }).addTo(map);
 
@@ -260,6 +291,7 @@ const dibujarCuadras = () => {
 };
 
 // Dibujar terrenos (zoom 15-19)
+// Dibujar terrenos (zoom >= 17)
 const dibujarTerrenos = () => {
   if (!map || terrenos.value.length === 0) return;
   
@@ -313,9 +345,23 @@ const dibujarTerrenos = () => {
         </div>
       `;
 
-      layer.bindPopup(popupContent, { maxWidth: 300, className: 'custom-popup' });
-      layer.on('mouseover', () => (layer as L.Path).setStyle({ weight: 4, fillOpacity: 0.7 }));
-      layer.on('mouseout', () => (layer as L.Path).setStyle({ weight: 2, fillOpacity: 0.5 }));
+      layer.bindPopup(popupContent);
+
+      // Label permanente
+      const bounds = (layer as L.Polygon).getBounds();
+      const center = bounds.getCenter();
+      
+      const label = L.tooltip({
+        permanent: true,
+        direction: 'center',
+        className: 'polygon-label terreno-label',
+      })
+        .setLatLng(center)
+        .setContent(`<div style="font-weight: 700; font-size: 11px;">${props.codigo}</div>`);
+      
+      if (map) {
+        label.addTo(map);
+      }
     },
   }).addTo(map);
 
@@ -327,6 +373,7 @@ const dibujarTerrenos = () => {
 // - Barrios: zoom < 14 (vista general)
 // - Cuadras: zoom 14-16 (vista media)
 // - Terrenos: zoom >= 17 (vista detallada)
+// Actualizar capa según nivel de zoom
 const actualizarCapaPorZoom = () => {
   if (!map) return;
   
@@ -334,17 +381,14 @@ const actualizarCapaPorZoom = () => {
   console.log('🔍 Zoom actual:', zoom);
 
   if (zoom < 14) {
-    // Nivel bajo: mostrar barrios
     if (currentZoomLevel.value !== 'barrios') {
       dibujarBarrios();
     }
-  } else if (zoom >= 14 && zoom < 16) {
-    // Nivel medio: mostrar cuadras
+  } else if (zoom >= 14 && zoom < 17) {  // ⬅️ CAMBIO: era < 16, ahora < 17
     if (currentZoomLevel.value !== 'cuadras') {
       dibujarCuadras();
     }
-  } else {
-    // Nivel alto: mostrar terrenos
+  } else {  // zoom >= 17
     if (currentZoomLevel.value !== 'terrenos') {
       dibujarTerrenos();
     }
@@ -544,5 +588,50 @@ onUnmounted(() => {
 
 :deep(.leaflet-popup-content) {
   margin: 0;
+}
+
+/* Estilos para labels de polígonos */
+:deep(.polygon-label) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+:deep(.polygon-label::before) {
+  display: none;
+}
+
+:deep(.barrio-label) {
+  color: #000000;
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: 
+    1px 1px 2px rgba(255,255,255,0.9), 
+    -1px -1px 2px rgba(255,255,255,0.9),
+    1px -1px 2px rgba(255,255,255,0.9),
+    -1px 1px 2px rgba(255,255,255,0.9);
+}
+
+:deep(.cuadra-label) {
+  color: #000000;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 
+    1px 1px 2px rgba(255,255,255,0.9), 
+    -1px -1px 2px rgba(255,255,255,0.9),
+    1px -1px 2px rgba(255,255,255,0.9),
+    -1px 1px 2px rgba(255,255,255,0.9);
+}
+
+:deep(.terreno-label) {
+  color: #000000 !important;
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow: 
+    1px 1px 2px rgba(255,255,255,0.9), 
+    -1px -1px 2px rgba(255,255,255,0.9),
+    1px -1px 2px rgba(255,255,255,0.9),
+    -1px 1px 2px rgba(255,255,255,0.9);
 }
 </style>

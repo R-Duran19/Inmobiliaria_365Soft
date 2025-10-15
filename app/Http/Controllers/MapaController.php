@@ -196,7 +196,7 @@ class MapaController extends Controller
                 'type' => 'Feature',
                 'properties' => [
                     'id' => $terreno->id,
-                    'codigo' => $terreno->codigo,
+                    'codigo' => $terreno->numero_terreno, 
                     'ubicacion' => $terreno->ubicacion,
                     'categoria' => $nombreCategoria,
                     'categoria_color' => $colorCategoria,
