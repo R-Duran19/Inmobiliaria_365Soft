@@ -161,149 +161,253 @@ loadProyectos();
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="text-center mb-8">
-      <i class="pi pi-sitemap text-6xl text-blue-500 mb-4"></i>
-      <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+  <div class="space-y-8 p-6 max-w-5xl mx-auto">
+  
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 mb-5">
+        <i class="pi pi-sitemap text-4xl text-white"></i>
+      </div>
+      <h3 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3">
         Asignación de Entidades
       </h3>
-      <p class="text-gray-600 dark:text-gray-400">
+      <p class="text-lg text-gray-600 dark:text-gray-400">
         Selecciona a qué proyecto y entidades deseas importar los datos
       </p>
     </div>
 
-    <!-- Import Type Info -->
-    <Message severity="info" :closable="false">
-      <div class="flex items-center gap-2">
-        <i class="pi pi-info-circle"></i>
+  
+    <div class="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 rounded-xl p-5 border-l-4 border-blue-500 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
+          <i class="pi pi-info-circle text-white text-lg"></i>
+        </div>
         <div>
-          <strong>Tipo de importación:</strong> 
-          {{ analysis.import_type }}
+          <p class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">Tipo de importación</p>
+          <p class="text-lg font-bold text-blue-700 dark:text-blue-300">{{ analysis.import_type }}</p>
         </div>
       </div>
-    </Message>
+    </div>
 
-    <!-- Mapping Form -->
-    <div class="space-y-6 max-w-2xl mx-auto">
-      <!-- Mostrar Proyecto detectado en el archivo -->
-<div v-if="proyectoDelArchivo" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 mb-6">
-  <p class="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
-    <i class="pi pi-check-circle"></i>
-    <strong>Proyecto detectado en el archivo:</strong> {{ proyectoDelArchivo }}
-  </p>
-</div>
-      
-      <!-- Proyecto Selector -->
-      <!-- Proyecto Selector -->
-<div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-  <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-    <i class="pi pi-building text-blue-500"></i>
-    Proyecto * 
-    <Tag 
-      v-if="proyectoDelArchivo" 
-      value="AUTO" 
-      severity="success" 
-      class="text-xs"
-    />
-  </label>
-  <Skeleton v-if="loadingProyectos" height="3rem" />
-  <Dropdown
-    v-else
-    v-model="selectedProyecto"
-    :options="proyectos"
-    optionLabel="nombre"
-    optionValue="id"
-    placeholder="Selecciona un proyecto"
-    class="w-full"
-    filter
-    showClear
-  />
-  <small class="text-gray-500 dark:text-gray-400 mt-1 block">
-    {{ proyectoDelArchivo ? 'Se usará el proyecto detectado en el archivo' : 'Los datos se importarán a este proyecto' }}
-  </small>
-</div>
+  
+    <div class="space-y-6">
+    
+      <div 
+        v-if="proyectoDelArchivo" 
+        class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-5 border border-emerald-300 dark:border-emerald-700 shadow-sm"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <i class="pi pi-check-circle text-white text-lg"></i>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-1">Proyecto detectado automáticamente</p>
+            <p class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{{ proyectoDelArchivo }}</p>
+          </div>
+        </div>
+      </div>
 
-      <!-- Barrio Selector (Condicional) -->
+      <!-- Selector de proyecto -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200">
+        <label class="block mb-4 text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <i class="pi pi-building text-blue-600 dark:text-blue-400"></i>
+          </div>
+          <span>Proyecto</span>
+          <span class="text-red-500">*</span>
+          <Tag v-if="proyectoDelArchivo" value="AUTO" severity="success" class="text-xs font-semibold" />
+        </label>
+
+        <Skeleton v-if="loadingProyectos" height="3.5rem" borderRadius="0.75rem" />
+
+        <select
+          v-else
+          v-model="selectedProyecto"
+          class="w-full h-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3"
+        >
+          <option disabled value="">Selecciona un proyecto</option>
+          <option
+            v-for="p in proyectos"
+            :key="p.id"
+            :value="p.id"
+          >
+            {{ p.nombre }}
+          </option>
+        </select>
+
+        <div class="mt-3 flex items-start gap-2">
+          <i class="pi pi-info-circle text-gray-400 text-sm mt-0.5"></i>
+          <small class="text-gray-600 dark:text-gray-400">
+            {{ proyectoDelArchivo ? 'Se usará el proyecto detectado en el archivo' : 'Los datos se importarán a este proyecto' }}
+          </small>
+        </div>
+      </div>
+
+      <!-- Selector de barrio -->
       <div 
         v-if="needsBarrio"
-        class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+        class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200"
       >
-        <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-          <i class="pi pi-map text-purple-500"></i>
-          Barrio *
+        <label class="block mb-4 text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <i class="pi pi-map text-purple-600 dark:text-purple-400"></i>
+          </div>
+          <span>Barrio</span>
+          <span class="text-red-500">*</span>
         </label>
-        <Skeleton v-if="loadingBarrios" height="3rem" />
-        <Dropdown
+
+        <Skeleton v-if="loadingBarrios" height="3.5rem" borderRadius="0.75rem" />
+
+        <select
           v-else
           v-model="selectedBarrio"
-          :options="barrios"
-          optionLabel="nombre"
-          optionValue="id"
-          placeholder="Selecciona un barrio"
-          class="w-full"
-          filter
-          showClear
+          class="w-full h-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3"
           :disabled="!selectedProyecto || barrios.length === 0"
-        />
-        <small class="text-gray-500 dark:text-gray-400 mt-1 block">
-          <span v-if="!selectedProyecto">Primero selecciona un proyecto</span>
-          <span v-else-if="barrios.length === 0">No hay barrios en este proyecto</span>
-          <span v-else>Las cuadras/terrenos se importarán a este barrio</span>
-        </small>
+        >
+          <option disabled value="">Selecciona un barrio</option>
+          <option
+            v-for="b in barrios"
+            :key="b.id"
+            :value="b.id"
+          >
+            {{ b.nombre }}
+          </option>
+        </select>
+
+        <div class="mt-3 flex items-start gap-2">
+          <i class="pi pi-info-circle text-gray-400 text-sm mt-0.5"></i>
+          <small class="text-gray-600 dark:text-gray-400">
+            <span v-if="!selectedProyecto">Primero selecciona un proyecto</span>
+            <span v-else-if="barrios.length === 0">No hay barrios disponibles en este proyecto</span>
+            <span v-else>Las cuadras/terrenos se importarán a este barrio</span>
+          </small>
+        </div>
       </div>
 
-      <!-- Cuadra Selector (Condicional) -->
-      <!-- Mapeo de cuadras detectadas -->
-<div v-if="needsCuadra" class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-  <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-    <i class="pi pi-th-large text-green-500"></i>
-    Mapeo de Cuadras detectadas
-  </label>
+    
+      <div 
+        v-if="needsCuadra" 
+        class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700"
+      >
+        <label class="block mb-4 text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <i class="pi pi-th-large text-green-600 dark:text-green-400"></i>
+          </div>
+          <span>Mapeo de Cuadras</span>
+        </label>
 
-  <p class="text-sm text-gray-500 mb-4">El archivo contiene las siguientes referencias de cuadra. Asigna la cuadra existente o crea una nueva.</p>
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-5 border border-blue-200 dark:border-blue-800">
+          <p class="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
+            <i class="pi pi-lightbulb"></i>
+            El archivo contiene las siguientes referencias de cuadra. Asigna la cuadra existente o crea una nueva.
+          </p>
+        </div>
 
-  <div v-for="(c, idx) in detectedCuadras" :key="idx" class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-    <div class="md:col-span-1">
-      <div class="font-mono text-sm">{{ c.cuadra_ref ?? c.nombre }}</div>
-      <div class="text-xs text-gray-500">Features: {{ c.index }}</div>
-    </div>
+        <div class="space-y-4">
+          <div 
+            v-for="(c, idx) in detectedCuadras" 
+            :key="idx" 
+            class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+          >
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+            
+              <div class="lg:col-span-3">
+                <div class="flex items-center gap-2 mb-1">
+                  <i class="pi pi-box text-gray-500 text-sm"></i>
+                  <span class="font-mono text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    {{ c.cuadra_ref ?? c.nombre }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="pi pi-database text-xs"></i>
+                  <span>Features: {{ c.index }}</span>
+                </div>
+              </div>
 
-    <div class="md:col-span-1">
-      <Dropdown
-        :options="cuadras"
-        optionLabel="nombre"
-        optionValue="id"
-        v-model="cuadraMap[c.cuadra_ref ?? c.nombre]"
-        :placeholder="`Selecciona cuadra para ${c.cuadra_ref ?? c.nombre}`"
-        class="w-full"
-        filter
-        showClear
-      />
-      <small class="text-gray-400">O deja vacío para crear nueva cuadra</small>
-    </div>
+            
+              <div class="lg:col-span-5">
+                <select
+                  v-model="cuadraMap[c.cuadra_ref ?? c.nombre]"
+                  class="w-full h-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3"
+                >
+                  <option disabled value="">Selecciona cuadra</option>
+                  <option
+                    v-for="cu in cuadras"
+                    :key="cu.id"
+                    :value="cu.id"
+                  >
+                    {{ cu.nombre }}
+                  </option>
+                </select>
+                <small class="text-gray-500 dark:text-gray-400 mt-1 block flex items-center gap-1">
+                  <i class="pi pi-arrow-right text-xs"></i>
+                  O deja vacío para crear nueva cuadra
+                </small>
+              </div>
 
-    <div class="md:col-span-1 flex gap-2">
-      <button type="button" class="btn" @click="openCreateCuadraDialog(c)">{{ cuadraMap[c.cuadra_ref ?? c.nombre] ? 'Reemplazar' : 'Crear nueva' }}</button>
-      <button v-if="cuadraMap[c.cuadra_ref ?? c.nombre]" type="button" class="btn-ghost" @click="cuadraMap[c.cuadra_ref ?? c.nombre] = null">Desasignar</button>
-    </div>
-  </div>
+            
+              <div class="lg:col-span-4 flex gap-2 justify-end">
+                <button 
+                  type="button" 
+                  class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2" 
+                  @click="openCreateCuadraDialog(c)"
+                >
+                  <i class="pi pi-plus text-sm"></i>
+                  {{ cuadraMap[c.cuadra_ref ?? c.nombre] ? 'Reemplazar' : 'Crear nueva' }}
+                </button>
+                <button 
+                  v-if="cuadraMap[c.cuadra_ref ?? c.nombre]" 
+                  type="button" 
+                  class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors flex items-center gap-2" 
+                  @click="cuadraMap[c.cuadra_ref ?? c.nombre] = null"
+                >
+                  <i class="pi pi-times text-sm"></i>
+                  Desasignar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  <small class="text-gray-500">Si creas nuevas cuadras, se generará cuadra nueva para el barrio seleccionado al importar.</small>
-</div>
-
-
-    </div>
-
-    <!-- Validation Message -->
-    <Message v-if="!isValid" severity="warn" :closable="false">
-      Por favor completa todos los campos requeridos antes de continuar
-    </Message>
-
-    <Message v-else severity="success" :closable="false">
-      <div class="flex items-center gap-2">
-        <i class="pi pi-check-circle"></i>
-        <span>Configuración válida. Puedes continuar al siguiente paso.</span>
+        <div class="mt-5 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+          <p class="text-sm text-amber-800 dark:text-amber-200 flex items-center gap-2">
+            <i class="pi pi-exclamation-triangle"></i>
+            Si creas nuevas cuadras, se generará una cuadra nueva para el barrio seleccionado al importar.
+          </p>
+        </div>
       </div>
-    </Message>
+    </div>
+
+  
+    <div class="mt-8">
+      <div 
+        v-if="!isValid" 
+        class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg p-5 shadow-sm"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center">
+            <i class="pi pi-exclamation-circle text-white text-lg"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-amber-900 dark:text-amber-100 mb-1">Campos incompletos</p>
+            <p class="text-sm text-amber-800 dark:text-amber-200">Por favor completa todos los campos requeridos antes de continuar</p>
+          </div>
+        </div>
+      </div>
+
+      <div 
+        v-else 
+        class="bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-lg p-5 shadow-sm"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <i class="pi pi-check-circle text-white text-lg"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-emerald-900 dark:text-emerald-100 mb-1">Configuración válida</p>
+            <p class="text-sm text-emerald-800 dark:text-emerald-200">Puedes continuar al siguiente paso</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
