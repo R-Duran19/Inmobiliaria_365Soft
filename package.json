@@ -36,6 +36,7 @@
         "clsx": "^2.1.1",
         "laravel-vite-plugin": "^2.0.0",
         "leaflet": "^1.9.4",
+        "leaflet.markercluster": "^1.5.3",
         "lucide-vue-next": "^0.468.0",
         "pdfjs-dist": "^3.4.120",
         "primeflex": "^3.3.1",
