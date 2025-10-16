@@ -206,7 +206,7 @@ loadProyectos();
         </div>
       </div>
 
-      <!-- Selector de proyecto -->
+
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200">
         <label class="block mb-4 text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
           <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -242,7 +242,7 @@ loadProyectos();
         </div>
       </div>
 
-      <!-- Selector de barrio -->
+
       <div 
         v-if="needsBarrio"
         class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200"
