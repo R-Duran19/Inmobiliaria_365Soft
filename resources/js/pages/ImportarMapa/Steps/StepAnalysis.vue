@@ -18,7 +18,7 @@ const importTypeInfo = computed(() => {
             severity: 'success',
             icon: 'pi-check-circle',
         },
-        barrios_only: {
+        barrios: {
             label: 'Solo Barrios',
             description: 'Se importarán únicamente barrios',
             severity: 'info',
@@ -30,13 +30,13 @@ const importTypeInfo = computed(() => {
             severity: 'info',
             icon: 'pi-th-large',
         },
-        cuadras_only: {
+        cuadras: {
             label: 'Solo Cuadras',
             description: 'Se importarán únicamente cuadras',
             severity: 'info',
             icon: 'pi-th-large',
         },
-        terrenos_only: {
+        terrenos: {
             label: 'Solo Terrenos',
             description: 'Se importarán únicamente terrenos',
             severity: 'warning',
@@ -45,7 +45,7 @@ const importTypeInfo = computed(() => {
     };
 
     return (
-        types[props.analysis?.import_type] || {
+        types[props.analysis?.import_type?.toLowerCase()] || {
             label: 'Desconocido',
             description: 'Tipo de importación no identificado',
             severity: 'danger',
