@@ -418,7 +418,7 @@ const importTypeInfo = computed(() => {
             <div
                 v-if="analysis.terrenos.count > 0"
                 class="overflow-hidden rounded-3xl bg-gradient-to-br from-green-50 to-green-100 shadow-lg transition-all duration-500 hover:shadow-2xl  dark:from-green-900/30 dark:to-green-800/30
-                dark: border dark:border-green-500"
+                dark:border dark:border-green-500"
             >
                 <div
                     class="flex items-center gap-4  p-6 "
@@ -445,7 +445,7 @@ const importTypeInfo = computed(() => {
                     </div>
                     <div>
                         <h3
-                            class="text-xl font-bold text-gray-900 dark:text-white"
+                            class="text-xl font-bold text-green-700 dark:text-white"
                         >
                             Terrenos Detectados
                         </h3>
