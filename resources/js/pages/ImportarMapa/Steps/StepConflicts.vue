@@ -313,6 +313,7 @@ onMounted(() => {
                   class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <td class="px-6 py-4">
+                    
                     <span 
                       class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
                       :class="{
@@ -321,7 +322,7 @@ onMounted(() => {
                         'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300': data.type !== 'barrio' && data.type !== 'cuadra'
                       }"
                     >
-                      <span>{{ typeIcon(data.type) }}</span>
+                      <i :class="typeIcon(data.type)"></i>
                       {{ typeLabel(data.type) }}
                     </span>
                   </td>
