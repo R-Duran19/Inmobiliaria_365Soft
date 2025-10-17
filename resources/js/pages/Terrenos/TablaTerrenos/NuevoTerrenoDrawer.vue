@@ -25,6 +25,7 @@ interface Cuadra {
 const props = defineProps<{
     visible: boolean;
     proyectos: Proyecto[];
+    idProyecto: number | null; // ✅ usa primitivo y permite null
 }>();
 
 const emit = defineEmits<{
@@ -39,13 +40,13 @@ const cuadras = ref<Cuadra[]>([]);
 const loading = ref(false);
 
 const form = reactive({
-    idproyecto: '0' as string | number,
-    idcategoria: 0 as number,
-    idbarrio: 0 as number, 
-    idcuadra: 0 as number,
-    numero_terreno: '' as string, 
-    ubicacion: '' as string,
-    superficie: '' as string,
+    idproyecto: null as number | null, // ✅
+    idcategoria: 0,
+    idbarrio: 0,
+    idcuadra: 0,
+    numero_terreno: '',
+    ubicacion: '',
+    superficie: '',
     precio_venta: null as number | null,
     cuota_inicial: null as number | null,
     cuota_mensual: null as number | null,
@@ -54,6 +55,9 @@ const form = reactive({
 });
 
 onMounted(() => {
+    if (props.idProyecto !== null) {
+        form.idproyecto = props.idProyecto;
+    }
     cargarProyectos();
     cargarCategorias();
     if (form.idproyecto) {

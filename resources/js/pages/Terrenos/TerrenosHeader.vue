@@ -12,6 +12,7 @@ interface Search {
 
 const props = defineProps<{
     search: Search;
+    proyectoSeleccionado?: number | null; // ✅
 }>();
 
 const emit = defineEmits(['update:search', 'created']);
@@ -97,7 +98,13 @@ const botones = [
         label: 'Nuevo Terreno',
         icon: 'pi pi-plus',
         color: 'blue',
-        action: () => (drawerVisible.value = true),
+        action: () => {
+            if (!props.proyectoSeleccionado) {
+                mostrarNotificacion('error', 'Debe seleccionar un proyecto antes de crear un nuevo terreno');
+                return;
+            }
+            drawerVisible.value = true;
+        },
     },
     {
         label: 'Exportar',
@@ -109,6 +116,13 @@ const botones = [
 </script>
 
 <template>
+    <div v-if="props.proyectoSeleccionado" 
+    class="mx-6 mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900 border border-blue-300 flex items-center justify-between">
+    <div class="text-sm text-gray-800 dark:text-white">
+        <strong>Proyecto seleccionado:</strong>
+        {{ proyectos.find(p => p.id === props.proyectoSeleccionado)?.nombre || 'Cargando...' }}
+    </div>
+</div>
     <div
         class="mx-6 mb-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-gray-700 dark:bg-gray-800"
     >
@@ -146,6 +160,7 @@ const botones = [
             v-if="drawerVisible"
             :visible="drawerVisible"
             :proyectos="proyectos"
+            :id-proyecto="props.proyectoSeleccionado ?? null"
             @close="drawerVisible = false"
             @created="handleCreated"
         />
