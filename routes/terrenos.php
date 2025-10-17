@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TerrenoController;
+use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified', 'role:admin'])
     ->get('terrenos', [TerrenoController::class, 'index'])
@@ -26,5 +27,20 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 Route::middleware(['auth', 'verified', 'role:admin'])
     ->get('api/terrenos/{terreno}', [TerrenoController::class, 'show'])
     ->name('terrenos.show');
+
+
+
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->get('proyectos/{idproyecto}/terrenos', function ($idproyecto) {
+        return Inertia::render('Terrenos/TerrenosPorProyecto', [
+            'proyectoId' => $idproyecto,
+        ]);
+    })->name('terrenos.getTerrenosPorProyecto');
+
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->get('api/proyectos/{idproyecto}/terrenos', [TerrenoController::class, 'getTerrenosPorProyecto'])
+    ->name('api.terrenos.getTerrenosPorProyecto');
 
 // Route::get('api/terrenos', [TerrenoController::class, 'getTerrenos']);

@@ -62,4 +62,8 @@ class Terreno extends Model
 
         return json_decode($this->poligono->toJson());
     }
+    public function barrio()
+    {
+        return $this->belongsTo(Barrio::class, 'idbarrio');
+    }
 }

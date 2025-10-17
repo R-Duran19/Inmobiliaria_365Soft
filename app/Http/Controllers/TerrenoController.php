@@ -216,5 +216,23 @@ class TerrenoController extends Controller
             'proyecto' => $terreno->proyecto,
         ]);
     }
+    public function getTerrenosPorProyecto($idproyecto)
+    {
+        try {
+            $terrenos = Terreno::with([
+                'proyecto:id,nombre',
+                'categorias_terrenos:id,nombre',
+                'cuadra:id,nombre,idbarrio',
+                'cuadra.barrio:id,nombre'
+            ])->where('idproyecto', $idproyecto)->get();
+
+            return response()->json($terrenos, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al obtener los terrenos del proyecto',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
 }

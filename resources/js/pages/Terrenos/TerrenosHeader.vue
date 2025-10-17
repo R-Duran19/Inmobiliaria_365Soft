@@ -7,7 +7,8 @@ import NuevoTerrenoDrawer from './TablaTerrenos/NuevoTerrenoDrawer.vue';
 
 interface Search {
     ubicacion: string;
-    nombreProyecto: string;
+    nombreCuadra: string;
+    nombreBarrio: string;
 }
 
 const props = defineProps<{
@@ -87,8 +88,13 @@ const filtros: {
 }[] = [
     { model: 'ubicacion', placeholder: 'Buscar ubicación', width: 'sm:w-52' },
     {
-        model: 'nombreProyecto',
-        placeholder: 'Buscar Proyecto',
+        model: 'nombreBarrio',
+        placeholder: 'Buscar Barrio',
+        width: 'sm:w-52',
+    },
+    {
+        model: 'nombreCuadra',
+        placeholder: 'Buscar Cuadra',
         width: 'sm:w-52',
     },
 ];
