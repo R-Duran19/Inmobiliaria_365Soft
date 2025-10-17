@@ -83,7 +83,7 @@ const executeImport = async () => {
   <div class="space-y-8 p-6 max-w-5xl mx-auto">
     
     <div class="text-center mb-10">
-      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30 mb-5">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-800 to-green-900  shadow-green-500/30 mb-5">
         <i class="pi pi-check-circle text-white text-4xl"></i>
       </div>
       <h3 class="text-3xl font-bold text-green-600 dark:text-gray-100 mb-2 tracking-tight">
@@ -237,7 +237,7 @@ const executeImport = async () => {
     <div v-if="!executing" class="flex justify-center pt-6">
       <button
         @click="executeImport"
-        class="flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-xl shadow-md hover:bg-green-700 hover:shadow-lg transition-all text-lg font-semibold"
+        class="flex items-center gap-2 bg-green-900 text-white px-8 py-3 rounded-xl shadow-md hover:bg-green-700 hover:shadow-lg transition-all text-lg font-semibold"
       >
         <i class="pi pi-check"></i> Ejecutar Importación
       </button>
