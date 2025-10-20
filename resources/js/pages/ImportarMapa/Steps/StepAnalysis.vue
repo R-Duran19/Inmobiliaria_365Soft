@@ -69,7 +69,7 @@ const importTypeInfo = computed(() => {
             </p>
         </div>
 
-        <!-- Import Type Card -->
+        
         <div
             class="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 dark:border-blue-800 dark:from-blue-900/20 dark:to-indigo-900/20"
         >
@@ -105,9 +105,9 @@ const importTypeInfo = computed(() => {
             </div>
         </div>
 
-        <!-- Summary Stats -->
+        
         <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <!-- Barrios -->
+            
             <div
                 class="rounded-2xl border-2 border-purple-200 bg-transparent p-6 transition-all duration-300 hover:border-purple-400 dark:border-purple-600"
             >
@@ -129,7 +129,7 @@ const importTypeInfo = computed(() => {
                 </p>
             </div>
 
-            <!-- Cuadras -->
+            
             <div
                 class="rounded-2xl border-2 border-blue-200 bg-transparent p-6 transition-all duration-300 hover:border-blue-400 dark:border-blue-600"
             >
@@ -151,7 +151,7 @@ const importTypeInfo = computed(() => {
                 </p>
             </div>
 
-            <!-- Terrenos -->
+            
             <div
                 class="rounded-2xl border-2 border-green-200 bg-transparent p-6 transition-all duration-300 hover:border-green-400 dark:border-green-600"
             >
@@ -174,9 +174,9 @@ const importTypeInfo = computed(() => {
             </div>
         </div>
 
-        <!-- Detailed Tables -->
+        
         <div class="space-y-10">
-            <!-- Barrios -->
+            
 
             <div
                 v-if="analysis.barrios.count > 0"
@@ -230,9 +230,9 @@ const importTypeInfo = computed(() => {
                         v-if="analysis.barrios.count > 0"
                         class="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 shadow-md transition-all duration-500 hover:shadow-xl dark:from-blue-900/30 dark:to-blue-800/30"
                     >
-                        <!-- Encabezado -->
+                        
 
-                        <!-- Tabla manual -->
+                        
                         <div class="!dark:border-none overflow-x-auto">
                             <table
                                 class="!dark:border-none min-w-full text-left text-sm text-gray-600 dark:text-gray-300"
@@ -262,7 +262,7 @@ const importTypeInfo = computed(() => {
                                         :key="i"
                                         class="dark:hover:bg-purple -900/30 border-t border-gray-200 bg-white transition-colors hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-900"
                                     >
-                                        <!-- Nombre -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 class="rounded-full border border-purple-400 px-4 py-1 font-semibold text-purple-600 dark:text-purple-400"
@@ -270,7 +270,7 @@ const importTypeInfo = computed(() => {
                                                 {{ data.nombre }}
                                             </span>
                                         </td>
-                                        <!-- Índice -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 class="rounded-lg bg-gray-100 px-3 py-1 font-mono text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
@@ -285,7 +285,7 @@ const importTypeInfo = computed(() => {
                     </div>
                 </div>
             </div>            
-            <!-- Cuadras -->
+            
             <div
                 v-if="analysis.cuadras.count > 0"
                 class="overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg transition-all duration-500 hover:shadow-2xl dark:border dark:border-blue-500 dark:from-blue-900/30 dark:to-blue-800/30"
@@ -334,9 +334,9 @@ const importTypeInfo = computed(() => {
                         v-if="analysis.cuadras.count > 0"
                         class="rounded-B-3xl overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 shadow-md transition-all duration-500 hover:shadow-xl dark:bg-gray-800"
                     >
-                        <!-- Encabezado -->
+                        
 
-                        <!-- Tabla manual -->
+                        
                         <div class="overflow-x-auto">
                             <table
                                 class="dark:text-gray-30 0 min-w-full text-left text-sm text-gray-600"
@@ -373,7 +373,7 @@ const importTypeInfo = computed(() => {
                                         :key="i"
                                         class="bg-white transition-colors hover:bg-blue-50 dark:bg-gray-900 dark:hover:bg-blue-900/30"
                                     >
-                                        <!-- Nombre -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 class="rounded-full px-4 py-1 font-semibold text-blue-600 border border-blue-600 dark:text-blue-400"
@@ -382,7 +382,7 @@ const importTypeInfo = computed(() => {
                                             </span>
                                         </td>
 
-                                        <!-- Barrio relacionado -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 v-if="data.barrio_ref"
@@ -398,7 +398,7 @@ const importTypeInfo = computed(() => {
                                             </span>
                                         </td>
 
-                                        <!-- Índice -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 class="rounded-lg bg-gray-100 px-3 py-1 font-mono text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
@@ -414,7 +414,7 @@ const importTypeInfo = computed(() => {
                 </div>
             </div>
 
-            <!-- Terrenos -->
+            
             <div
                 v-if="analysis.terrenos.count > 0"
                 class="overflow-hidden rounded-3xl bg-gradient-to-br from-green-50 to-green-100 shadow-lg transition-all duration-500 hover:shadow-2xl  dark:from-green-900/30 dark:to-green-800/30
@@ -469,9 +469,9 @@ const importTypeInfo = computed(() => {
                         v-if="analysis.terrenos.count > 0"
                         class="overflow-hidden  bg-gradient-to-br from-blue-50 to-blue-100 shadow-md transition-all duration-500 hover:shadow-xl dark:from-blue-900/30 dark:to-blue-800/30"
                     >
-                        <!-- Encabezado -->
+                        
 
-                        <!-- Tabla manual -->
+                        
                         <div class="overflow-x-auto">
                             <table
                                 class="min-w-full text-left text-sm text-gray-600 dark:text-gray-300"
@@ -508,7 +508,7 @@ const importTypeInfo = computed(() => {
                                         class=" bg-white transition-colors hover:bg-green-50 dark:hover:bg-green-900/30
                                         dark:bg-gray-900"
                                     >
-                                        <!-- Número -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 class="rounded-full border border-green-400 px-4 py-1 font-semibold text-green-600 dark:text-green-400"
@@ -516,7 +516,7 @@ const importTypeInfo = computed(() => {
                                                 Lote {{ data.numero }}
                                             </span>
                                         </td>
-                                        <!-- Cuadra relacionada -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 v-if="data.cuadra_ref"
@@ -531,7 +531,7 @@ const importTypeInfo = computed(() => {
                                                 Sin relación
                                             </span>
                                         </td>
-                                        <!-- Índice -->
+                                        
                                         <td class="px-6 py-4">
                                             <span
                                                 class="rounded-lg bg-gray-100 px-3 py-1 font-mono text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"

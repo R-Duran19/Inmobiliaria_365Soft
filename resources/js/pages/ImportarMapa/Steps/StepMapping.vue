@@ -156,7 +156,7 @@ function updateMapping() {
 }
 
 
-// Cargar proyectos al iniciar
+
 loadProyectos();
 </script>
 

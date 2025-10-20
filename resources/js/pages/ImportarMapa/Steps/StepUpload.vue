@@ -87,13 +87,13 @@ const exampleGeoJSON = {
       </p>
     </div>
 
-    <!-- DropZone -->
+    
     <DropZone 
       v-if="!file"
       @file-selected="handleFileSelect" 
     />
 
-    <!-- File Preview -->
+    
     <FilePreview 
       v-if="file && !analyzing"
       :file="file"
@@ -101,7 +101,7 @@ const exampleGeoJSON = {
       @remove="removeFile"
     />
 
-    <!-- Analyzing Spinner -->
+    
     <div v-if="analyzing" class="flex flex-col items-center justify-center py-12">
       <ProgressSpinner 
         style="width: 50px; height: 50px"
@@ -113,7 +113,7 @@ const exampleGeoJSON = {
       </p>
     </div>
 
-    <!-- Error Message -->
+    
     <Message 
       v-if="error" 
       severity="error" 
@@ -122,7 +122,7 @@ const exampleGeoJSON = {
       {{ error }}
     </Message>
 
-    <!-- Analysis Errors -->
+    
     <Message 
       v-if="analysis && !analysis.valid" 
       severity="error"
@@ -138,7 +138,7 @@ const exampleGeoJSON = {
       </div>
     </Message>
 
-    <!-- Quick Analysis Preview -->
+    
     <div 
       v-if="analysis && analysis.valid" 
       class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4"
