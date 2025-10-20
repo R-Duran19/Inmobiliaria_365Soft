@@ -76,7 +76,7 @@ const exportarProyectos = async () => {
         class="w-full max-w-3xl dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
       />
     </div>
-    <div class="flex gap-2 w-full sm:w-auto justify-end">
+    <div class="flex flex-col gap-2 w-full sm:w-auto justify-end sm:flex-row">
       <ProyectosFormSheet>
         <Button
           variant="default"
