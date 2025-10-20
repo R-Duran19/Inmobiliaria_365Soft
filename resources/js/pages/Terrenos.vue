@@ -184,7 +184,7 @@ function mostrarTerrenos() {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <!-- 🔹 Mostrar PROYECTOS -->
-        <div v-if="!mostrandoTerrenos" class="mb-6">
+        <div v-if="!mostrandoTerrenos" class="mb-6 p-4">
             <h2 class="text-xl font-semibold mb-3 dark:text-white">Proyectos Disponibles</h2>
             <div class="flex flex-col rounded-lg shadow-md bg-white dark:bg-gray-800">
                 <div
@@ -219,13 +219,13 @@ function mostrarTerrenos() {
 
         <!-- 🔹 Mostrar TERRENOS del proyecto seleccionado -->
         <div v-else class="py-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            <div class="flex items-center justify-between mb-4 gap-1">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white ml-6">
                     Terrenos del Proyecto Seleccionado
                 </h2>
                 <button
                     @click="volverAProyectos"
-                    class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                    class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition mr-6"
                 >
                     ← Volver a Proyectos
                 </button>

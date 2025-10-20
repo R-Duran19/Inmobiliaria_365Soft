@@ -20,7 +20,7 @@ const headerNames = [
 
 <template>
     <div
-        class="mx-6 overflow-hidden rounded-lg bg-white shadow-sm dark:bg-gray-800"
+        class="mx-6 overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-gray-800"
     >
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
