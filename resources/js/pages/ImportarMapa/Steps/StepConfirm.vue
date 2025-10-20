@@ -303,45 +303,6 @@ const executeImport = async () => {
             </div>
         </div>
 
-        <div class="mt-8">
-            <div
-                v-if="
-                    wizardData.conflictResolution === 'ask' &&
-                    getConflictCount > 0
-                "
-                class="flex items-start gap-3 rounded-xl border border-yellow-300 bg-yellow-100 p-4 dark:border-yellow-600 dark:bg-gray-800"
-            >
-                <i class="pi pi-exclamation-circle mt-1 text-yellow-600"></i>
-                <div>
-                    <p
-                        class="font-semibold text-yellow-700 dark:text-yellow-500"
-                    >
-                        Decisiones pendientes
-                    </p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Debes marcar qué hacer con cada uno de los
-                        {{ getConflictCount }} conflictos
-                    </p>
-                </div>
-            </div>
-
-            <div
-                v-else
-                class="flex items-start gap-3 rounded-xl border-0 bg-green-100 p-4 dark:border-l-4 dark:border-l-amber-600 dark:bg-amber-900/20 dark:text-amber-900"
-            >
-                <i
-                    class="pi pi-check-circle mt-1 text-green-600 dark:text-amber-500"
-                ></i>
-                <div>
-                    <p class="font-semibold text-gray-800 dark:text-amber-100">
-                        Listo para importar
-                    </p>
-                    <p class="text-sm text-gray-600 dark:text-amber-200">
-                        Todos los parámetros están configurados correctamente
-                    </p>
-                </div>
-            </div>
-        </div>
 
         <div
             v-if="executing"
