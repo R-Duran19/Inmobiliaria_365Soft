@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
-import Card from 'primevue/card';
-import Message from 'primevue/message';
-import ProgressSpinner from 'primevue/progressspinner';
-import RadioButton from 'primevue/radiobutton';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Tag from 'primevue/tag';
-import Button from 'primevue/button';
+import Loading from '@/components/ui/Loading/Loading.vue';
 
 interface Conflict {
   index: number;
@@ -131,14 +124,8 @@ onMounted(() => {
       </p>
     </div>
 
-    
-    <div v-if="loading" class="flex flex-col items-center justify-center py-12">
-      <div class="relative w-16 h-16">
-        <div class="absolute inset-0 border-4 border-orange-200 dark:border-orange-900 rounded-full"></div>
-        <div class="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-      <p class="mt-4 text-gray-600 dark:text-gray-400 text-sm">Analizando conflictos...</p>
-    </div>
+  
+    <Loading v-if="loading"></Loading>
 
     <div v-else class="space-y-6">
       

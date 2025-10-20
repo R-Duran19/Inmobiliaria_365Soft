@@ -3,9 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import DataView from 'primevue/dataview';
-import Button from 'primevue/button';
-import Tag from 'primevue/tag';
+import Loading from '@/components/ui/Loading/Loading.vue';
 
 interface Proyecto {
   id: number;
@@ -100,15 +98,9 @@ onMounted(() => {
       </div>
 
       
-      <div v-if="loading" class="flex justify-center items-center py-20">
-        <div class="text-center">
-          <div class="relative inline-block">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 animate-pulse"></div>
-            <i class="pi pi-spin pi-spinner text-5xl text-white absolute inset-0 flex items-center justify-center"></i>
-          </div>
-          <p class="text-gray-600 dark:text-gray-400 mt-6 text-lg font-medium">Cargando proyectos...</p>
-        </div>
-      </div>
+      
+      <Loading v-if="loading"></Loading>
+      
 
       
       <div

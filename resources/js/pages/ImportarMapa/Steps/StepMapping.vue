@@ -4,6 +4,7 @@ import axios from 'axios';
 import Dropdown from 'primevue/dropdown';
 import Message from 'primevue/message';
 import Skeleton from 'primevue/skeleton';
+import Loading from '@/components/ui/Loading/Loading.vue';
 
 const props = defineProps<{
   analysis: any;
@@ -217,7 +218,7 @@ loadProyectos();
           <Tag v-if="proyectoDelArchivo" value="AUTO" severity="success" class="text-xs font-semibold" />
         </label>
 
-        <Skeleton v-if="loadingProyectos" height="3.5rem" borderRadius="0.75rem" />
+        <Loading v-if="loadingProyectos"></Loading>
 
         <select
           v-else
@@ -255,7 +256,7 @@ loadProyectos();
           <span class="text-red-500">*</span>
         </label>
 
-        <Skeleton v-if="loadingBarrios" height="3.5rem" borderRadius="0.75rem" />
+        <Loading v-if="loadingBarrios"></Loading>
 
         <select
           v-else
