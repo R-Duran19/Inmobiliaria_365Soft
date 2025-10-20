@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useNotification } from '@/composables/useNotification';
+const { showSuccess, showError } = useNotification();
 
 const props = defineProps<{
   open: boolean;
@@ -30,7 +32,7 @@ const form = ref({
 });
 
 const proyectos = ref<Array<{ id: number; nombre: string }>>([]);
-const isSaving = ref(false); // 👈 Controla si está guardando
+const isSaving = ref(false); 
 
 const cargarProyectos = async () => {
   try {
@@ -59,7 +61,7 @@ watch(() => props.open, (isOpen) => {
 });
 
 const handleSubmit = async () => {
-  if (isSaving.value) return; // 👈 Previene doble clic
+  if (isSaving.value) return; 
   isSaving.value = true;
 
   try {
@@ -80,12 +82,14 @@ const handleSubmit = async () => {
     }
 
     emit('save');
+    showSuccess('Categoría guardada', `La categoría "${form.value.nombre}" se guardó correctamente.`);
     emit('update:open', false);
   } catch (error) {
     console.error(error);
     alert('Error al guardar la categoría');
+    showError('Error', 'No se pudo guardar la categoría.');
   } finally {
-    isSaving.value = false; // 👈 Habilita de nuevo el botón
+    isSaving.value = false; 
   }
 };
 
