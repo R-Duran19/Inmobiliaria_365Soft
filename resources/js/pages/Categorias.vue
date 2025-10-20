@@ -120,7 +120,7 @@ onMounted(() => {
     <Head title="Categorías de Terrenos" />
 
     <!-- 🔹 Mostrar PROYECTOS -->
-    <div v-if="!mostrandoCategorias" class="mb-6">
+    <div v-if="!mostrandoCategorias" class="mb-6 p-4">
       <h2 class="text-xl font-semibold mb-3 dark:text-white">Proyectos Disponibles</h2>
       <div class="flex flex-col rounded-lg shadow-md bg-white dark:bg-gray-800">
         <div
@@ -155,7 +155,7 @@ onMounted(() => {
 
     <!-- 🔹 Mostrar CATEGORÍAS del proyecto seleccionado -->
     <div v-else class="py-6">
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-4 ml-6 mr-6">
         <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
           Categorías del Proyecto: {{ proyectoSeleccionado?.nombre }}
         </h2>

@@ -107,7 +107,12 @@ const exportarCategorias = async () => {
         {{ props.categoriasFiltradasLength || 0 }} categorías encontradas
       </p>
     </div>
-    <div class="flex gap-2 w-full sm:w-auto justify-end">
+
+    <div class="flex gap-2 w-full sm:w-auto justify-end flex-col sm:flex-row">
+  <!-- Contenido aquí -->
+</div>
+
+    <div class="flex gap-2 w-full justify-end flex-col sm:flex-row">
       <Button
         variant="default"
         class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"

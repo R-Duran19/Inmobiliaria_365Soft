@@ -18,7 +18,7 @@ defineEmits(['refresh', 'edit']);
 </script>
 
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden mx-6">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-x-auto mx-6">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead class="bg-gray-50 dark:bg-gray-700">
         <tr>
