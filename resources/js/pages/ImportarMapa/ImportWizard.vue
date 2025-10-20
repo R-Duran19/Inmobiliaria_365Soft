@@ -259,14 +259,6 @@ const resetWizard = () => {
                             />
                         </div>
 
-                        <Button
-                            v-if="activeStep === 5"
-                            label="Nueva Importación"
-                            icon="pi pi-refresh"
-                            @click="resetWizard"
-                            severity="success"
-                            class="!bg-green-600 !text-white hover:!bg-green-700"
-                        />
                     </div>
                 </div>
             </div>
