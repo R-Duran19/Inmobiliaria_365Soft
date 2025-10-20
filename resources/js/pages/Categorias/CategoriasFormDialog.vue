@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 
 const props = defineProps<{
   open: boolean;
+  idproyecto?: number | null;
   categoria?: {
     id: number;
     nombre: string;
@@ -29,12 +30,12 @@ const form = ref({
 });
 
 const proyectos = ref<Array<{ id: number; nombre: string }>>([]);
+const isSaving = ref(false); // 👈 Controla si está guardando
 
 const cargarProyectos = async () => {
   try {
     const response = await axios.get('/categorias_terrenos/proyectos');
     proyectos.value = response.data.data;
-    console.log(proyectos.value); 
   } catch (error) {
     console.error(error);
   }
@@ -44,20 +45,23 @@ watch(() => props.open, (isOpen) => {
   if (isOpen && props.categoria) {
     form.value = {
       ...props.categoria,
-      color: props.categoria.color || '#000000' // Valor por defecto si no existe
+      color: props.categoria.color || '#000000'
     };
   } else if (isOpen) {
     form.value = {
       id: null,
       nombre: '',
-      idproyecto: null,
+      idproyecto: props.idproyecto || null,
       estado: true,
-      color: '#000000' // Valor por defecto
+      color: '#000000'
     };
   }
 });
 
 const handleSubmit = async () => {
+  if (isSaving.value) return; // 👈 Previene doble clic
+  isSaving.value = true;
+
   try {
     if (!form.value.nombre.trim()) {
       alert('El nombre es requerido');
@@ -67,22 +71,21 @@ const handleSubmit = async () => {
       alert('El proyecto es requerido');
       return;
     }
-    
+
     if (!form.value.id) {
       form.value.estado = true;
-    }
-    
-    if (form.value.id) {
-      await axios.put(`/categorias_terrenos/${form.value.id}`, form.value);
-    } else {
       await axios.post('/categorias_terrenos', form.value);
+    } else {
+      await axios.put(`/categorias_terrenos/${form.value.id}`, form.value);
     }
-    
+
     emit('save');
     emit('update:open', false);
   } catch (error) {
     console.error(error);
     alert('Error al guardar la categoría');
+  } finally {
+    isSaving.value = false; // 👈 Habilita de nuevo el botón
   }
 };
 
@@ -95,11 +98,13 @@ onMounted(cargarProyectos);
       <DialogHeader>
         <DialogTitle>{{ form.id ? 'Editar Categoría' : 'Nueva Categoría' }}</DialogTitle>
       </DialogHeader>
+
       <form @submit.prevent="handleSubmit" class="space-y-6 px-2">
         <div class="space-y-2">
           <Label for="nombre">Nombre de la Categoría *</Label>
           <Input id="nombre" v-model="form.nombre" required />
         </div>
+
         <div class="space-y-2">
           <Label for="color">Color *</Label>
           <Input
@@ -110,12 +115,14 @@ onMounted(cargarProyectos);
             class="w-full h-10 p-1 border rounded-md dark:bg-gray-800 dark:border-gray-700"
           />
         </div>
+
         <div class="space-y-2">
           <Label for="idproyecto">Proyecto *</Label>
           <select
             id="idproyecto"
             v-model="form.idproyecto"
-            class="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+            :disabled="!!props.idproyecto"
+            class="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 disabled:opacity-70 disabled:cursor-not-allowed"
             required
           >
             <option value="" disabled selected>Selecciona un proyecto</option>
@@ -123,13 +130,24 @@ onMounted(cargarProyectos);
               {{ proyecto.nombre }}
             </option>
           </select>
+
+          <p v-if="props.idproyecto" class="text-sm text-gray-500 dark:text-gray-400">
+            Proyecto asignado:
+            <strong>{{ proyectos.find(p => p.id === props.idproyecto)?.nombre || 'Cargando...' }}</strong>
+          </p>
         </div>
+
         <DialogFooter>
-          <Button type="button" variant="outline" @click="emit('update:open', false)">
+          <Button
+            type="button"
+            variant="outline"
+            :disabled="isSaving"
+            @click="emit('update:open', false)"
+          >
             Cancelar
           </Button>
-          <Button type="submit">
-            Guardar
+          <Button type="submit" :disabled="isSaving">
+            {{ isSaving ? 'Guardando...' : 'Guardar' }}
           </Button>
         </DialogFooter>
       </form>
