@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import Tag from 'primevue/tag';
 import { computed } from 'vue';
+import { toRaw } from 'vue';
+
 
 const props = defineProps<{
     analysis: any;
@@ -9,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     next: [];
 }>();
+
 
 const importTypeInfo = computed(() => {
     const types: Record<string, any> = {
@@ -53,10 +56,17 @@ const importTypeInfo = computed(() => {
         }
     );
 });
+
+function mostrar(){
+    console.log('data: ', props.analysis.cuadras)
+}
 </script>
 
 <template>
     <div class="space-y-6">
+        <button @click="mostrar">
+            msotrr
+        </button>
         <div class="mb-8 text-center">
             <i class="pi pi-chart-bar mb-4 text-6xl text-blue-500"></i>
             <h3
@@ -368,8 +378,7 @@ const importTypeInfo = computed(() => {
 
                                 <tbody>
                                     <tr
-                                        v-for="(data, i) in analysis.cuadras
-                                            .items"
+                                        v-for="(data, i) in analysis.cuadras.items"
                                         :key="i"
                                         class="bg-white transition-colors hover:bg-blue-50 dark:bg-gray-900 dark:hover:bg-blue-900/30"
                                     >
@@ -378,17 +387,18 @@ const importTypeInfo = computed(() => {
                                             <span
                                                 class="rounded-full px-4 py-1 font-semibold text-blue-600 border border-blue-600 dark:text-blue-400"
                                             >
-                                                {{ data.nombre }}
+                                                 {{ data?.nombre || '—' }}
+
                                             </span>
                                         </td>
 
                                         
                                         <td class="px-6 py-4">
                                             <span
-                                                v-if="data.barrio_ref"
-                                                class="rounded-full px-4 py-1 font-semibold text-purple-500"
+                                                v-if="data.barrio"
+                                                class="rounded-full px-4 py-1 font-semibold text-purple-500 border border-purple-600 "
                                             >
-                                                {{ data.barrio_ref }}
+                                                {{ data.barrio}}
                                             </span>
                                             <span
                                                 v-else
@@ -519,10 +529,10 @@ const importTypeInfo = computed(() => {
                                         
                                         <td class="px-6 py-4">
                                             <span
-                                                v-if="data.cuadra_ref"
+                                                v-if="data.cuadra"
                                                 class="rounded-full border border-blue-400 px-4 py-1 font-semibold text-blue-600 dark:text-blue-400"
                                             >
-                                                {{ data.cuadra_ref }}
+                                                {{ data.cuadra }}
                                             </span>
                                             <span
                                                 v-else
