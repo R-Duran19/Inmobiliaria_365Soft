@@ -29,18 +29,18 @@ interface Proyecto {
   terrenos_disponibles: number;
   terrenos_vendidos: number;
   terrenos_reservados: number;
-  poligono?: any; // Agregado para evitar el error de propiedad faltante
+  poligono?: any;
 }
 
 const mapContainer = ref<HTMLDivElement | null>(null);
 let map: L.Map | null = null;
 
-// Layers para cada nivel de zoom
+
 let barriosLayer: L.GeoJSON | null = null;
 let cuadrasLayer: L.GeoJSON | null = null;
 let terrenosLayer: L.GeoJSON | null = null;
 
-// Datos
+
 const barrios = ref<any[]>([]);
 const cuadras = ref<any[]>([]);
 const terrenos = ref<any[]>([]);
@@ -51,7 +51,7 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const currentZoomLevel = ref<'barrios' | 'cuadras' | 'terrenos' | null>(null);
 
-// Detectar tema actual
+
 const isDark = ref(document.documentElement.classList.contains('dark'));
 const observer = new MutationObserver(() => {
   isDark.value = document.documentElement.classList.contains('dark');
@@ -87,7 +87,6 @@ const getEstadoBadgeColor = (estado: number) => {
   }
 };
 
-// Cargar información del proyecto
 const cargarProyecto = async () => {
   try {
     const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}`);
@@ -101,7 +100,6 @@ const cargarProyecto = async () => {
   }
 };
 
-// Cargar categorías
 const cargarCategorias = async () => {
   try {
     const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}/categorias`);
@@ -114,7 +112,6 @@ const cargarCategorias = async () => {
   }
 };
 
-// Cargar barrios
 const cargarBarrios = async () => {
   try {
     const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}/barrios`);
@@ -127,7 +124,6 @@ const cargarBarrios = async () => {
   }
 };
 
-// Cargar cuadras
 const cargarCuadras = async () => {
   try {
     const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}/cuadras`);
@@ -140,7 +136,7 @@ const cargarCuadras = async () => {
   }
 };
 
-// Cargar terrenos
+
 const cargarTerrenos = async () => {
   try {
     const response = await axios.get(`/api/mapa/proyectos/${props.proyectoId}/terrenos`);
@@ -153,10 +149,9 @@ const cargarTerrenos = async () => {
   }
 };
 
-// Limpiar todas las capas del mapa
-// Limpiar todas las capas del mapa
+
 const limpiarCapas = () => {
-  // Remover layers GeoJSON
+
   if (barriosLayer && map) {
     map.removeLayer(barriosLayer);
     barriosLayer = null;
@@ -170,7 +165,7 @@ const limpiarCapas = () => {
     terrenosLayer = null;
   }
   
-  // 🆕 CRÍTICO: Limpiar TODOS los tooltips/labels permanentes
+
   if (map) {
     map.eachLayer((layer) => {
       if (layer instanceof L.Tooltip) {
@@ -180,8 +175,7 @@ const limpiarCapas = () => {
   }
 };
 
-// Dibujar barrios (zoom < 7)
-// Dibujar barrios (zoom < 14)
+
 const dibujarBarrios = () => {
   if (!map || barrios.value.length === 0) return;
   
@@ -214,7 +208,7 @@ const dibujarBarrios = () => {
       
       layer.bindPopup(popupContent);
 
-      // Label permanente
+
       const bounds = (layer as L.Polygon).getBounds();
       const center = bounds.getCenter();
       
@@ -235,8 +229,7 @@ const dibujarBarrios = () => {
   currentZoomLevel.value = 'barrios';
 };
 
-// Dibujar cuadras (zoom 7-14)
-// Dibujar cuadras (zoom 14-16)
+
 const dibujarCuadras = () => {
   if (!map || cuadras.value.length === 0) return;
   
@@ -269,7 +262,7 @@ const dibujarCuadras = () => {
       
       layer.bindPopup(popupContent);
 
-      // Label permanente
+      
       const bounds = (layer as L.Polygon).getBounds();
       const center = bounds.getCenter();
       
@@ -290,8 +283,8 @@ const dibujarCuadras = () => {
   currentZoomLevel.value = 'cuadras';
 };
 
-// Dibujar terrenos (zoom 15-19)
-// Dibujar terrenos (zoom >= 17)
+
+
 const dibujarTerrenos = () => {
   if (!map || terrenos.value.length === 0) return;
   
@@ -314,38 +307,89 @@ const dibujarTerrenos = () => {
     },
     onEachFeature: (feature, layer) => {
       const props = feature.properties;
-      const textColor = isDark.value ? '#e5e7eb' : '#1f2937';
-      const dividerColor = isDark.value ? '#374151' : '#e5e7eb';
+      const bgColor = isDark.value ? '#1f2937' : '#ffffff';
+      const textColor = isDark.value ? '#f3f4f6' : '#111827';
+      const mutedColor = isDark.value ? '#9ca3af' : '#6b7280';
 
       const popupContent = `
-        <div style="font-family: sans-serif; min-width: 250px; color: ${textColor};">
-          <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">
-            ${props.codigo || `Terreno #${props.id}`}
-          </h3>
-          
-          <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-            <div style="background-color: ${getEstadoBadgeColor(props.estado)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-              ${getEstadoTexto(props.estado)}
-            </div>
-            <div style="background-color: ${props.categoria_color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-              ${props.categoria}
-            </div>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-width: 300px; background: ${bgColor}; border-radius: 16px; overflow: hidden;">
+          <!-- Header con gradiente -->
+          <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); padding: 20px; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -20px; right: 500px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+            <h3 style="margin: 0; font-size: 22px; font-weight: 900; color: white; position: relative; z-index: 1;">
+              ${props.codigo || `Terreno #${props.id}`}
+            </h3>
           </div>
 
-          <div style="border-top: 1px solid ${dividerColor}; padding-top: 10px; margin-top: 10px;">
-            <p style="margin: 5px 0; font-size: 14px;"><strong>Ubicación:</strong> ${props.ubicacion}</p>
-            <p style="margin: 5px 0; font-size: 14px;"><strong>Superficie:</strong> ${props.superficie}</p>
-          </div>
-          
-          <div style="border-top: 1px solid ${dividerColor}; padding-top: 10px; margin-top: 10px;">
-            <p style="margin: 5px 0; font-size: 15px; color: #10b981;"><strong>Precio Venta:</strong> $${Number(props.precio_venta).toLocaleString()}</p>
-            <p style="margin: 5px 0; font-size: 13px; color: ${textColor};"><strong>Cuota Inicial:</strong> $${Number(props.cuota_inicial).toLocaleString()}</p>
-            <p style="margin: 5px 0; font-size: 13px; color: ${textColor};"><strong>Cuota Mensual:</strong> $${Number(props.cuota_mensual).toLocaleString()}</p>
+          <!-- Content -->
+          <div style="padding: 20px;">
+            <!-- Badges -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+              <div style="background: ${getEstadoBadgeColor(props.estado)}; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <span style="width: 6px; height: 6px; background: white; border-radius: 50%; display: inline-block;"></span>
+                ${getEstadoTexto(props.estado)}
+              </div>
+              <div style="background: ${props.categoria_color}; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                ${props.categoria}
+              </div>
+            </div>
+
+            <!-- Info Section -->
+            <div style="background: ${isDark.value ? '#374151' : '#f9fafb'}; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+              <div style="display: flex; align-items: start; gap: 12px; margin-bottom: 12px;">
+                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                </div>
+                <div style="flex: 1;">
+                  <p style="margin: 0; font-size: 11px; font-weight: 600; color: ${mutedColor}; text-transform: uppercase; letter-spacing: 0.5px;">Ubicación</p>
+                  <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 600; color: ${textColor};">${props.ubicacion}</p>
+                </div>
+              </div>
+              
+              <div style="display: flex; align-items: start; gap: 12px;">
+                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6, #ec4899); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                  </svg>
+                </div>
+                <div style="flex: 1;">
+                  <p style="margin: 0; font-size: 11px; font-weight: 600; color: ${mutedColor}; text-transform: uppercase; letter-spacing: 0.5px;">Superficie</p>
+                  <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 600; color: ${textColor};">${props.superficie}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pricing Section -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+              <div style="margin-bottom: 12px;">
+                <p style="margin: 0; font-size: 11px; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">Precio de Venta</p>
+                <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 900;">$${Number(props.precio_venta).toLocaleString()}</p>
+              </div>
+              
+              <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <p style="margin: 0; font-size: 10px; font-weight: 600; opacity: 0.8; text-transform: uppercase;">Cuota Inicial</p>
+                  <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700;">$${Number(props.cuota_inicial).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p style="margin: 0; font-size: 10px; font-weight: 600; opacity: 0.8; text-transform: uppercase;">Cuota Mensual</p>
+                  <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700;">$${Number(props.cuota_mensual).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       `;
 
-      layer.bindPopup(popupContent);
+      layer.bindPopup(popupContent, {
+        maxWidth: 350,
+        className: 'custom-popup'
+      });
 
       // Label permanente
       const bounds = (layer as L.Polygon).getBounds();
@@ -369,11 +413,6 @@ const dibujarTerrenos = () => {
 };
 
 // Actualizar capa según nivel de zoom
-// CONFIGURACIÓN DE NIVELES DE ZOOM:
-// - Barrios: zoom < 14 (vista general)
-// - Cuadras: zoom 14-16 (vista media)
-// - Terrenos: zoom >= 17 (vista detallada)
-// Actualizar capa según nivel de zoom
 const actualizarCapaPorZoom = () => {
   if (!map) return;
   
@@ -384,11 +423,11 @@ const actualizarCapaPorZoom = () => {
     if (currentZoomLevel.value !== 'barrios') {
       dibujarBarrios();
     }
-  } else if (zoom >= 14 && zoom < 17) {  // ⬅️ CAMBIO: era < 16, ahora < 17
+  } else if (zoom >= 14 && zoom < 17) {
     if (currentZoomLevel.value !== 'cuadras') {
       dibujarCuadras();
     }
-  } else {  // zoom >= 17
+  } else {
     if (currentZoomLevel.value !== 'terrenos') {
       dibujarTerrenos();
     }
@@ -422,56 +461,50 @@ onMounted(async () => {
   map.on('zoomend', actualizarCapaPorZoom);
 
   // Configurar límites del mapa según el polígono del proyecto
-// Configurar límites del mapa según el polígono del proyecto
-if (proyecto.value?.poligono && map) {
-  const poligonoGeoJSON = typeof proyecto.value.poligono === 'string' 
-    ? JSON.parse(proyecto.value.poligono) 
-    : proyecto.value.poligono;
+  if (proyecto.value?.poligono && map) {
+    const poligonoGeoJSON = typeof proyecto.value.poligono === 'string' 
+      ? JSON.parse(proyecto.value.poligono) 
+      : proyecto.value.poligono;
 
-  const proyectoLayer = L.geoJSON(poligonoGeoJSON);
-  const bounds = proyectoLayer.getBounds();
+    const proyectoLayer = L.geoJSON(poligonoGeoJSON);
+    const bounds = proyectoLayer.getBounds();
 
-  if (bounds.isValid()) {
-  // 1️⃣ Vuela hacia el proyecto sin límites
-  map.flyToBounds(bounds, {
-    padding: [50, 50],
-    duration: 1.5,
-    easeLinearity: 0.25
-  });
+    if (bounds.isValid()) {
+      // Vuela hacia el proyecto sin límites
+      map.flyToBounds(bounds, {
+        padding: [50, 50],
+        duration: 1.5,
+        easeLinearity: 0.25
+      });
 
-  // 2️⃣ Luego de la animación (~1.5s), fija límites y zoom
-  setTimeout(() => {
-    if (map) {
-      map.setMaxBounds(bounds.pad(0.1));
-      // Forzamos el zoom exacto deseado
-      map.setZoom(13);
+      // Luego de la animación, fija límites y zoom
+      setTimeout(() => {
+        if (map) {
+          map.setMaxBounds(bounds.pad(0.1));
+          map.setZoom(13);
+        }
+      }, 1600);
     }
-  }, 1600); // un poco más que la duración del fly
-}
-
-} else if (terrenos.value.length > 0) {
-  // Si no hay polígono, intentar centrar en los terrenos
-  const geojsonObject: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: terrenos.value,
-  };
-  const tempLayer = L.geoJSON(geojsonObject);
-  const bounds = tempLayer.getBounds();
-  if (bounds.isValid()) {
-    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 11, duration: 1.5 });
-  }
-} else if (cuadras.value.length > 0) {
-  const geojson: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: cuadras.value,
-  };
-  const tempLayer = L.geoJSON(geojson);
-  const bounds = tempLayer.getBounds();
-  if (bounds.isValid()) {
-    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 11, duration: 1.5 });
-  }
-
-
+  } else if (terrenos.value.length > 0) {
+    const geojsonObject: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: terrenos.value,
+    };
+    const tempLayer = L.geoJSON(geojsonObject);
+    const bounds = tempLayer.getBounds();
+    if (bounds.isValid()) {
+      map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 11, duration: 1.5 });
+    }
+  } else if (cuadras.value.length > 0) {
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: cuadras.value,
+    };
+    const tempLayer = L.geoJSON(geojson);
+    const bounds = tempLayer.getBounds();
+    if (bounds.isValid()) {
+      map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 11, duration: 1.5 });
+    }
   }
 });
 
@@ -484,6 +517,15 @@ watch(isDark, () => {
   }
 });
 
+const mostrarPanelProyecto = ref(false);
+const mostrarLeyenda = ref(false);
+
+// Función para cerrar paneles al hacer click fuera
+const cerrarPaneles = () => {
+  mostrarPanelProyecto.value = false;
+  mostrarLeyenda.value = false;
+};
+
 onUnmounted(() => {
   if (map) {
     map.off('zoomend', actualizarCapaPorZoom);
@@ -494,100 +536,232 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="relative h-screen w-full">
-    <!-- Loading -->
+  <div class="relative h-screen w-full" @click="cerrarPaneles">
+    
     <div
       v-if="loading"
-      class="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white dark:bg-gray-800 
-             px-6 py-3 rounded-lg shadow-lg text-gray-800 dark:text-gray-200"
+      class="absolute top-4 sm:top-6 left-1/2 transform -translate-x-1/2 z-[1000] w-[90%] sm:w-auto"
     >
-      <div class="flex items-center gap-2">
-        <i class="pi pi-spin pi-spinner text-blue-500"></i>
-        <p class="text-sm font-medium">Cargando datos del mapa...</p>
+      <div class="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 sm:px-8 py-3 sm:py-4 shadow-2xl">
+        <div class="absolute inset-0 bg-white/10"></div>
+        <div class="relative flex items-center gap-2 sm:gap-3">
+          <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <i class="pi pi-spin pi-spinner text-white text-sm sm:text-lg"></i>
+          </div>
+          <p class="text-white font-bold text-sm sm:text-base">Cargando mapa...</p>
+        </div>
       </div>
     </div>
 
-    <!-- Error -->
+    
     <div
       v-if="error"
-      class="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] 
-             bg-red-100 dark:bg-red-900/40 border border-red-400 dark:border-red-700 
-             text-red-700 dark:text-red-300 px-6 py-3 rounded-lg shadow-lg"
+      class="absolute top-4 sm:top-6 left-1/2 transform -translate-x-1/2 z-[1000] w-[90%] sm:max-w-md"
     >
-      <div class="flex items-center gap-2">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p class="text-sm font-medium">{{ error }}</p>
+      <div class="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 border-2 border-red-300 dark:border-red-700 px-4 sm:px-6 py-3 sm:py-4 shadow-2xl">
+        <div class="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-red-200 dark:bg-red-800 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
+        <div class="relative flex items-center gap-2 sm:gap-3">
+          <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-red-500 flex items-center justify-center shadow-lg">
+            <i class="pi pi-exclamation-triangle text-white text-base sm:text-xl"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-red-800 dark:text-red-200 text-sm sm:text-base">Error</p>
+            <p class="text-xs sm:text-sm text-red-700 dark:text-red-300 truncate">{{ error }}</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Panel Info del Proyecto -->
+    
     <div
       v-if="proyecto"
-      class="absolute top-4 left-4 z-[1000] bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg 
-             max-w-xs text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+      class="absolute top-4 sm:top-6 right-5 z-[1000]"
+      @click.stop
     >
-      <h3 class="font-bold text-lg mb-2">{{ proyecto.nombre }}</h3>
-      <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ proyecto.ubicacion }}</p>
+      
+      <button
+        v-if="!mostrarPanelProyecto"
+        @click="mostrarPanelProyecto = true"
+        class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+      >
+        <i class="pi pi-info-circle text-white text-xl sm:text-2xl"></i>
+      </button>
 
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div>
-          <div class="text-xl font-bold text-green-600 dark:text-green-400">
-            {{ proyecto.terrenos_disponibles }}
+      
+      <div
+        v-else
+        class="w-[calc(100vw-16px)] sm:w-auto sm:max-w-sm animate-scale-in"
+      >
+        <div class="relative overflow-hidden rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 sm:border-2">
+          
+          <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 sm:px-6 py-3 sm:py-4">
+            <div class="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/10 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16"></div>
+            <div class="relative flex items-center justify-between">
+              <div class="flex-1 min-w-0 pr-2">
+                <h3 class="font-black text-base sm:text-xl text-white mb-1 truncate">{{ proyecto.nombre }}</h3>
+                <div class="flex items-center gap-2 text-purple-100">
+                  <i class="pi pi-map-marker text-xs sm:text-sm flex-shrink-0"></i>
+                  <p class="text-xs sm:text-sm font-medium truncate">{{ proyecto.ubicacion }}</p>
+                </div>
+              </div>
+              
+              <button
+                @click="mostrarPanelProyecto = false"
+                class="flex-shrink-0 w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <i class="pi pi-times text-white text-sm"></i>
+              </button>
+            </div>
           </div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Disponibles</div>
-        </div>
-        <div>
-          <div class="text-xl font-bold text-orange-600 dark:text-orange-400">
-            {{ proyecto.terrenos_reservados }}
+
+          
+          <div class="p-3 sm:p-6">
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+              <div class="text-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 sm:border-2">
+                <div class="text-lg sm:text-2xl font-black text-green-600 dark:text-green-400 mb-0.5 sm:mb-1">
+                  {{ proyecto.terrenos_disponibles }}
+                </div>
+                <div class="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase leading-tight">
+                  Disponibles
+                </div>
+              </div>
+              <div class="text-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 sm:border-2">
+                <div class="text-lg sm:text-2xl font-black text-orange-600 dark:text-orange-400 mb-0.5 sm:mb-1">
+                  {{ proyecto.terrenos_reservados }}
+                </div>
+                <div class="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase leading-tight">
+                  Reservados
+                </div>
+              </div>
+              <div class="text-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200 dark:border-red-800 sm:border-2">
+                <div class="text-lg sm:text-2xl font-black text-red-600 dark:text-red-400 mb-0.5 sm:mb-1">
+                  {{ proyecto.terrenos_vendidos }}
+                </div>
+                <div class="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 font-semibold uppercase leading-tight">
+                  Vendidos
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Reservados</div>
-        </div>
-        <div>
-          <div class="text-xl font-bold text-red-600 dark:text-red-400">
-            {{ proyecto.terrenos_vendidos }}
-          </div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Vendidos</div>
         </div>
       </div>
     </div>
 
-    <!-- Leyenda de Categorías -->
+    
     <div
       v-if="categorias.length > 0"
-      class="absolute top-4 right-4 z-[1000] bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg 
-             max-w-xs text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+      class="absolute top-22 z-[1000] right-5"
+      @click.stop
     >
-      <h4 class="font-bold text-sm mb-3">Categorías de Terrenos</h4>
-      <div class="space-y-2">
-        <div
-          v-for="categoria in categorias"
-          :key="categoria.id"
-          class="flex items-center gap-2"
-        >
-          <div
-            class="w-4 h-4 rounded-sm"
-            :style="{ backgroundColor: categoria.color }"
-          ></div>
-          <span class="text-sm flex-1">{{ categoria.nombre }}</span>
-          <span class="text-xs text-gray-500 dark:text-gray-400">
-            ({{ categoria.total_terrenos }})
-          </span>
+      
+      <button
+        v-if="!mostrarLeyenda"
+        @click="mostrarLeyenda = true"
+        class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+      >
+        <i class="pi pi-tag text-white text-xl sm:text-2xl"></i>
+      </button>
+
+      
+      <div
+        v-else
+        class="w-[calc(100vw-16px)] sm:w-auto sm:max-w-xs animate-scale-in"
+      >
+        <div class="relative overflow-hidden rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-200 dark:border-gray-700 sm:border-2">
+          
+          <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 sm:px-6 py-3 sm:py-4">
+            <div class="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-white/10 rounded-full -mr-10 sm:-mr-12 -mt-10 sm:-mt-12"></div>
+            <div class="relative flex items-center justify-between">
+              <div class="flex items-center gap-2 flex-1">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <i class="pi pi-tag text-white text-sm"></i>
+                </div>
+                <h4 class="font-black text-white text-sm sm:text-base">Categorías</h4>
+              </div>
+              
+              <button
+                @click="mostrarLeyenda = false"
+                class="flex-shrink-0 w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <i class="pi pi-times text-white text-sm"></i>
+              </button>
+            </div>
+          </div>
+
+          
+          <div class="p-3 sm:p-6 space-y-2 sm:space-y-3 max-h-60 sm:max-h-96 overflow-y-auto">
+            <div
+              v-for="categoria in categorias"
+              :key="categoria.id"
+              class="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+            >
+              <div
+                class="w-8 h-8 sm:w-10 sm:h-10 rounded-md sm:rounded-lg shadow-md group-hover:scale-110 transition-transform flex-shrink-0"
+                :style="{ backgroundColor: categoria.color }"
+              ></div>
+              <div class="flex-1 min-w-0">
+                <span class="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 block truncate">
+                  {{ categoria.nombre }}
+                </span>
+                <span class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                  {{ categoria.total_terrenos }} terrenos
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Mapa -->
+    
     <div ref="mapContainer" class="w-full h-full"></div>
   </div>
 </template>
 
 <style scoped>
+
 :deep(.leaflet-popup-content-wrapper) {
-  border-radius: 8px;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+:deep(.leaflet-popup-content) {
+  margin: 0 !important;
+  width: auto !important;
+}
+
+:deep(.leaflet-popup-tip) {
+  display: none;
+}
+
+:deep(.custom-popup .leaflet-popup-close-button) {
+  color: white !important;
+  font-size: 24px !important;
+  font-weight: bold !important;
+  padding: 8px 12px !important;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  right: 20px;
+  
+}
+
+:deep(.custom-popup .leaflet-popup-close-button:hover) {
+  opacity: 1;
+}
+
+:deep(.leaflet-popup-content-wrapper) {
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 :deep(.leaflet-popup-content) {
   margin: 0;
+}
+
+:deep(.leaflet-popup-tip) {
+  border-radius: 2px;
 }
 
 /* Estilos para labels de polígonos */
@@ -634,4 +808,25 @@ onUnmounted(() => {
     1px -1px 2px rgba(255,255,255,0.9),
     -1px 1px 2px rgba(255,255,255,0.9);
 }
+
+/* Scrollbar personalizado para categorías */
+:deep(.overflow-y-auto::-webkit-scrollbar) {
+  width: 6px;
+}
+
+:deep(.overflow-y-auto::-webkit-scrollbar-track) {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+:deep(.overflow-y-auto::-webkit-scrollbar-thumb) {
+  background: linear-gradient(180deg, #6366f1, #a855f7, #ec4899);
+  border-radius: 10px;
+}
+
+:deep(.overflow-y-auto::-webkit-scrollbar-thumb:hover) {
+  background: linear-gradient(180deg, #4f46e5, #9333ea, #db2777);
+}
+
+
 </style>
