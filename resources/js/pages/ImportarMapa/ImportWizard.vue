@@ -114,7 +114,7 @@ const resetWizard = () => {
                 <!-- Steps Navigation -->
                 <!-- Steps Navigation -->
                 <div
-                    class="mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800"
+                    class="mb-8 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800"
                 >
                     <div class="flex items-center justify-between text-center py-3">
                         <div

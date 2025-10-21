@@ -257,7 +257,7 @@ const totalProcessed = computed(() => {
                             </p>
                         </div>
                     </div>
-                    <div class="ml-2 grid grid-cols-3 gap-4">
+                    <div class="ml-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div
                             class="group relative overflow-hidden rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-5 transition-all hover:shadow-lg dark:border-green-800 dark:from-green-900/20 dark:to-emerald-900/20"
                         >
@@ -321,7 +321,7 @@ const totalProcessed = computed(() => {
                             </p>
                         </div>
                     </div>
-                    <div class="ml-2 grid grid-cols-3 gap-4">
+                    <div class="ml-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div
                             class="group relative overflow-hidden rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-5 transition-all hover:shadow-lg dark:border-green-800 dark:from-green-900/20 dark:to-emerald-900/20"
                         >
@@ -385,7 +385,7 @@ const totalProcessed = computed(() => {
                             </p>
                         </div>
                     </div>
-                    <div class="ml-2 grid grid-cols-3 gap-4">
+                    <div class="ml-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div
                             class="group relative overflow-hidden rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-5 transition-all hover:shadow-lg dark:border-green-800 dark:from-green-900/20 dark:to-emerald-900/20"
                         >
