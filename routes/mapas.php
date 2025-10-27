@@ -2,18 +2,23 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MapaController;
+use App\Http\Controllers\VentasController;
 use Inertia\Inertia;
 
-// Vista del mapa de un proyecto específico
-Route::middleware(['auth', 'verified'])
-    ->get('mapa/{proyecto}', function ($proyectoId) {
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    Route::get('mapa/{proyecto}', function ($proyectoId) {
         return Inertia::render('mapas/MapaProyecto', [
             'proyectoId' => $proyectoId
         ]);
-    })
-    ->name('mapa.proyecto');
+    })->name('mapa.proyecto');
 
-// API para obtener datos del mapa
+    
+    Route::get('ventas/{terreno}', [VentasController::class, 'show'])->name('ventas.show');
+});
+
+
 Route::middleware(['auth', 'verified'])
     ->prefix('api/mapa')
     ->group(function () {
