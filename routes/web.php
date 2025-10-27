@@ -38,3 +38,5 @@ require __DIR__.'/documentos.php';
 require __DIR__.'/barrios.php';
 require __DIR__ . '/cuadras.php';  
 require __DIR__.'/importacion.php';
+require __DIR__.'/ventas.php';
+require __DIR__.'/moneda.php';
