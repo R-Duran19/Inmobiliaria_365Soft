@@ -6,6 +6,8 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editPassword } from '@/routes/password';
 import { edit as editProfile } from '@/routes/profile';
+import { edit as editMoneda } from '@/routes/moneda';
+
 import { show } from '@/routes/two-factor';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
@@ -27,6 +29,11 @@ const sidebarNavItems: NavItem[] = [
         title: 'Apariencia',
         href: editAppearance(),
     },
+    {
+        title: 'Moneda',
+        href: editMoneda(),
+    },
+
 ];
 
 const currentPath = typeof window !== undefined ? window.location.pathname : '';
@@ -62,8 +69,8 @@ const currentPath = typeof window !== undefined ? window.location.pathname : '';
 
             <Separator class="my-6 lg:hidden" />
 
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
+            <div class="flex-1 md:max-w-5xl">
+                <section class="w-full space-y-12">
                     <slot />
                 </section>
             </div>
