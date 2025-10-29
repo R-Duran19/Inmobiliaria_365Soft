@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create('monedas', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 50);
-            $table->string('pais', 30);
+            $table->string('pais', 100);
             $table->string('abreviacion', 5);
             $table->decimal('tipo_cambio', 10, 2);
             $table->boolean('activo')->default(0);;
