@@ -454,132 +454,57 @@ class DocumentoTerrenoController extends Controller
         \Log::info('--- Buscando MATRÍCULA ---');
 
         $patronesMatricula = [
-            // Con etiqueta
-            '/MATR[IÍ]CULA\s*N[°º]?\s*[:\s]*(\d{1,2}[\s\.\-]?\d{2}[\s\.\-]?\d{1,2}[\s\.\-]?\d{2}[\s\.\-]?\d{2}[\s\.\-]?\d{5,})/i',
-            '/MATR[IÍ]CULA[:\s]+(\d+[\.\s\-]*\d+[\.\s\-]*\d+[\.\s\-]*\d+[\.\s\-]*\d+[\.\s\-]*\d+)/i',
-            // Sin etiqueta - formato exacto
-            '/(\d{1,2}\.\d{2}\.\d{1,2}\.\d{2}\.\d{2}\.\d{5,})/',
-            // Con espacios o guiones
-            '/(\d{1,2}[\s\.\-]+\d{2}[\s\.\-]+\d{1,2}[\s\.\-]+\d{2}[\s\.\-]+\d{2}[\s\.\-]+\d{5,})/',
-            // Formato específico más común
-            '/(\d{1}\.\d{2}\.\d{2}\.\d{2}\.\d{2}\.\d{6})/',
-            // Buscar secuencia específica (ej: 2.01.0.99.00.76676)
-            '/(\d+\.\d+\.\d+\.\d+\.\d+\.\d{5,})/',
+            // Con etiqueta "MATRÍCULA N°"
+            '/MATR[IÍ]CULA\s*N[°º]?\s*[:\s]*(\d{1,2}\.\d{2}\.\d{1,2}\.\d{2}\.\d{2,8})/iu',
+            // Formato flexible con espacios o guiones
+            '/MATR[IÍ]CULA[:\s]+(\d+[\.\s\-]+\d+[\.\s\-]+\d+[\.\s\-]+\d+[\.\s\-]+\d+)/i',
+            // Patrón directo: X.XX.X.XX.XXXXXX (más común)
+            '/\b(\d{1,2}\.\d{2}\.\d{1,2}\.\d{2}\.\d{4,8})\b/',
+            // Con más flexibilidad en los números
+            '/\b(\d{1,2}\.\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{3,10})\b/',
         ];
 
         foreach ($patronesMatricula as $indice => $patron) {
             if (preg_match($patron, $texto, $matches)) {
-                // Limpiar y normalizar
                 $matricula = $matches[1];
-                $matricula = preg_replace('/[\s\-]+/', '', $matricula);  // Quitar espacios y guiones
-                $matricula = preg_replace('/\.{2,}/', '.', $matricula);  // Quitar puntos dobles
-                \Log::info("DEBUG - Matrícula limpia: '$matricula'");
-                $partes = explode('.', $matricula);
-                \Log::info('DEBUG - Número de partes: ' . count($partes));
-                \Log::info('DEBUG - Partes: ' . json_encode($partes));
 
-                // Validar formato - más flexible
-                if (preg_match('/^\d{1,2}\.\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{4,}$/', $matricula)) {
+                // Limpiar espacios y caracteres extraños
+                $matricula = trim($matricula);
+                $matricula = preg_replace('/[\s\-]+/', '', $matricula);
+
+                \Log::info("Candidato encontrado con patrón $indice: '$matricula'");
+
+                // Validar que tenga puntos y números
+                $partes = explode('.', $matricula);
+                \Log::info('Número de partes: ' . count($partes) . ' - Partes: ' . json_encode($partes));
+
+                // Debe tener al menos 5 partes separadas por punto
+                if (count($partes) >= 5 && strlen($matricula) >= 10) {
                     $datos['matricula'] = $matricula;
-                    \Log::info("✓ Matrícula encontrada con patrón $indice: " . $matricula);
+                    \Log::info('✓✓✓ Matrícula VÁLIDA encontrada: ' . $matricula);
                     break;
                 } else {
-                    // Aceptar también si tiene 5 o 6 partes separadas por punto
-                    $partes = explode('.', $matricula);
-                    if (count($partes) >= 5 && count($partes) <= 6) {
-                        $datos['matricula'] = $matricula;
-                        \Log::info("✓ Matrícula encontrada (validación flexible) con patrón $indice: " . $matricula);
-                        break;
-                    }
-                    \Log::info("Patrón $indice encontró '$matricula' pero formato inválido (tiene " . count($partes) . ' partes)');
+                    \Log::info('Descartado: no cumple validación (partes: ' . count($partes) . ', longitud: ' . strlen($matricula) . ')');
                 }
             }
         }
 
         if (!isset($datos['matricula'])) {
-            \Log::warning('✗ No se encontró matrícula con patrones estándar');
+            \Log::warning('✗ No se encontró matrícula con patrones principales');
+            \Log::info('Intentando búsqueda exhaustiva...');
 
-            // Búsqueda flexible - cualquier secuencia con puntos que parezca matrícula
-            if (preg_match_all('/(\d+[\.\s\-]+\d+[\.\s\-]+\d+[\.\s\-]+\d+[\.\s\-]+\d+[\.\s\-]+\d+)/', $texto, $matches)) {
-                \Log::info('Secuencias numéricas candidatas: ' . json_encode($matches[1]));
+            // Buscar CUALQUIER secuencia que tenga formato X.XX.X.XX.XXXXX
+            if (preg_match_all('/(\d{1,2}\.\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{3,10})/', $texto, $matches)) {
+                \Log::info('Secuencias numéricas encontradas: ' . json_encode($matches[1]));
 
                 foreach ($matches[1] as $candidato) {
-                    $candidatoLimpio = preg_replace('/[\s\-]+/', '', $candidato);
-                    $partes = explode('.', $candidatoLimpio);
+                    $partes = explode('.', $candidato);
 
-                    // Debe tener 6 partes separadas por punto
-                    if (count($partes) === 6) {
-                        $datos['matricula'] = $candidatoLimpio;
-                        \Log::info('✓ Matrícula encontrada (búsqueda flexible): ' . $candidatoLimpio);
+                    if (count($partes) >= 5) {
+                        $datos['matricula'] = $candidato;
+                        \Log::info('✓ Matrícula encontrada (búsqueda exhaustiva): ' . $candidato);
                         break;
                     }
-                }
-            }
-        }
-
-        // ========== BUSCAR CÓDIGO DE BARRAS ==========
-        \Log::info('--- Buscando CÓDIGO DE BARRAS ---');
-
-        $patronesCodigoBarras = [
-            // Con contexto
-            '/FORMULARIO\s*(?:DE\s*)?(?:FOLIO\s*)?(?:REAL)?[^\d]{0,30}(\d{10,14})/i',
-            '/C[ÓO]DIGO\s*(?:DE\s*)?BARRAS?\s*[:\s]*(\d{8,14})/i',
-            // Cerca de "Formulario" o al final de línea
-            '/FORMULARIO[^\d]*(\d{10,14})/i',
-            // Código de barras estándar (12 dígitos es común)
-            '/\b(\d{12})\b/',
-            '/\b(\d{13})\b/',
-            '/\b(\d{10})\b/',
-            // Con prefijos conocidos
-            '/(?:0812|08121)(\d{8,10})/',
-            // Patrón alfanumérico + números
-            '/[a-z]{2,6}[0-9i]{1,2}(\d{8,14})/i',
-            // Al final de línea (común en códigos de barras)
-            '/(\d{10,14})(?:\s*$)/m',
-            // Buscar "Valor Bs" seguido de número largo
-            '/Valor\s*Bs[^\d]*(\d{10,14})/i',
-        ];
-
-        foreach ($patronesCodigoBarras as $indice => $patron) {
-            if (preg_match($patron, $texto, $matches)) {
-                $codigo = $matches[1];
-
-                // Validar longitud
-                if (strlen($codigo) >= 8 && strlen($codigo) <= 14) {
-                    // No debe ser parte de la matrícula
-                    if (!isset($datos['matricula']) || strpos($datos['matricula'], $codigo) === false) {
-                        // No debe ser una fecha
-                        if (!preg_match('/^(19|20)\d{2}/', $codigo)) {
-                            $datos['codigo_barras'] = $codigo;
-                            \Log::info("✓ Código de barras encontrado con patrón $indice: " . $codigo);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!isset($datos['codigo_barras'])) {
-            \Log::warning('✗ No se encontró código de barras con patrones estándar');
-
-            // Buscar TODOS los números de 8-14 dígitos
-            if (preg_match_all('/\b(\d{8,14})\b/', $texto, $matches)) {
-                \Log::info('Números largos encontrados: ' . json_encode(array_unique($matches[1])));
-
-                foreach (array_unique($matches[1]) as $numero) {
-                    // Filtros
-                    if (isset($datos['matricula']) && strpos($datos['matricula'], $numero) !== false) {
-                        continue;  // Es parte de la matrícula
-                    }
-
-                    if (preg_match('/^(19|20)\d{2}/', $numero)) {
-                        continue;  // Parece una fecha
-                    }
-
-                    // Este parece ser un buen candidato
-                    $datos['codigo_barras'] = $numero;
-                    \Log::info('✓ Código de barras asignado (fallback): ' . $numero);
-                    break;
                 }
             }
         }
@@ -683,122 +608,25 @@ class DocumentoTerrenoController extends Controller
     {
         $datos = [];
 
-        if (preg_match('/\b([A-Z]\-[A-Z]{2}\-[A-Z]{2}\-\d{4})\b/', $texto, $matches)) {
-            $datos['serie'] = trim($matches[1]);
-        } elseif (preg_match('/Serie[:\s]+([A-Z0-9\-]+)/i', $texto, $matches)) {
-            if (strlen($matches[1]) > 5 && strpos($matches[1], '-') !== false) {
-                $datos['serie'] = trim($matches[1]);
-            }
-        } elseif (preg_match('/([A-Z]{1,2}\-[A-Z]{2,4}\-[A-Z]{2,4}\-\d{4})/', $texto, $matches)) {
-            $datos['serie'] = trim($matches[1]);
+        // Buscar "TESTIMONIO N°" seguido del número
+        if (preg_match('/TESTIMONIO\s*N[°º]?\s*[:\s]*(\d+\/\d{4})/i', $texto, $matches)) {
+            $datos['numero_testimonio'] = trim($matches[1]);
+            \Log::info('Número de testimonio encontrado: ' . $datos['numero_testimonio']);
+        }
+        // Patrón alternativo si el formato es diferente
+        elseif (preg_match('/TESTIMONIO[:\s]+(\d+\/\d{4})/i', $texto, $matches)) {
+            $datos['numero_testimonio'] = trim($matches[1]);
+            \Log::info('Número de testimonio encontrado (patrón alternativo): ' . $datos['numero_testimonio']);
+        }
+        // Buscar solo el patrón número/año en caso de que "TESTIMONIO N°" no esté claro
+        elseif (preg_match('/\b(\d{3,5}\/\d{4})\b/', $texto, $matches)) {
+            $datos['numero_testimonio'] = trim($matches[1]);
+            \Log::info('Número de testimonio encontrado (patrón genérico): ' . $datos['numero_testimonio']);
         }
 
-        if (isset($datos['serie']) && (strlen($datos['serie']) < 5 || !preg_match('/[0-9]/', $datos['serie']))) {
-            unset($datos['serie']);
-        }
-
-        return $datos;
-    }
-
-    private function extraerDatosCertificadoCatastral($rutaArchivo)
-    {
-        try {
-            \Log::info('===== INICIO OCR CERTIFICADO CATASTRAL (Google Vision API) =====');
-            \Log::info('Ruta del archivo: ' . $rutaArchivo);
-
-            if (!file_exists($rutaArchivo)) {
-                \Log::error('El archivo no existe');
-                return null;
-            }
-
-            // Crear cliente de Vision API
-            $vision = new ImageAnnotatorClient([
-                'credentials' => base_path('storage/credentials/documentos-475421-6eda096856ed.json'),
-            ]);
-
-            // Leer imagen
-            $imageContent = file_get_contents($rutaArchivo);
-            if ($imageContent === false) {
-                \Log::error('No se pudo leer la imagen');
-                $vision->close();
-                return null;
-            }
-
-            \Log::info('Archivo leído correctamente, enviando a Google Vision...');
-
-            // Crear objeto Image
-            $image = new Image();
-            $image->setContent($imageContent);
-
-            // Crear Feature para TEXT_DETECTION
-            $feature = new Feature();
-            $feature->setType(Type::TEXT_DETECTION);
-
-            // Crear AnnotateImageRequest
-            $request = new AnnotateImageRequest();
-            $request->setImage($image);
-            $request->setFeatures([$feature]);
-
-            // Crear BatchAnnotateImagesRequest
-            $batchRequest = new BatchAnnotateImagesRequest();
-            $batchRequest->setRequests([$request]);
-
-            // Realizar detección de texto
-            $response = $vision->batchAnnotateImages($batchRequest);
-            $responses = $response->getResponses();
-
-            if (count($responses) === 0) {
-                \Log::warning('Google Vision no devolvió respuestas');
-                $vision->close();
-                return null;
-            }
-
-            $annotation = $responses[0];
-
-            // Verificar si hay error
-            if ($annotation->hasError()) {
-                $error = $annotation->getError();
-                \Log::error('Error de Vision API: ' . $error->getMessage());
-                $vision->close();
-                return null;
-            }
-
-            // Obtener texto detectado
-            $textAnnotations = $annotation->getTextAnnotations();
-
-            $vision->close();
-
-            if (count($textAnnotations) === 0) {
-                \Log::warning('Google Vision no detectó texto en la imagen');
-                return null;
-            }
-
-            // El primer elemento contiene todo el texto detectado
-            $textoCompleto = $textAnnotations[0]->getDescription();
-
-            \Log::info('✓ Texto extraído por Google Vision');
-            \Log::info('Longitud del texto: ' . strlen($textoCompleto));
-            \Log::info('Primeros 500 caracteres: ' . substr($textoCompleto, 0, 500));
-            \Log::info('===== FIN OCR CERTIFICADO CATASTRAL =====');
-
-            return $this->extraerCamposCertificadoCatastral($textoCompleto);
-        } catch (\Exception $e) {
-            \Log::error('Error OCR Certificado Catastral: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            return null;
-        }
-    }
-
-    private function extraerCamposCertificadoCatastral($texto)
-    {
-        $datos = [];
-
-        if (preg_match('/N[°º]\s*(\d{4}\-\d{4})/i', $texto, $matches)) {
-            $datos['numero'] = trim($matches[1]);
-        } elseif (preg_match('/(\d{4}\-\d{4})/', $texto, $matches)) {
-            $datos['numero'] = trim($matches[1]);
-        } elseif (preg_match('/(\d{3,5}\-\d{4})/', $texto, $matches)) {
-            $datos['numero'] = trim($matches[1]);
+        // Validar que se encontró el número
+        if (!isset($datos['numero_testimonio'])) {
+            \Log::warning('No se pudo extraer el número de testimonio');
         }
 
         return $datos;
