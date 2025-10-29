@@ -1,11 +1,10 @@
 <script setup lang="ts">
-
 import { Moneda } from '@/types/Moneda';
-import MonedaTableRow from '../Moneda/MonedaTableRow.vue';
 import { onMounted } from 'vue';
+import MonedaTableRow from '../Moneda/MonedaTableRow.vue';
 
 const props = defineProps<{ monedas: Moneda[] }>();
-// const emit = defineEmits(['updated', 'deleted', 'costos']);
+const emit = defineEmits(['updated', 'deleted', 'costos', 'refresh']);
 
 const headerNames = [
     'Acciones',
@@ -18,18 +17,10 @@ const headerNames = [
 ];
 
 
-onMounted(async () => {
-    console.log('fdsfsadfdas fdffda ', props.monedas)
-});
-
-
-
 </script>
 
-<template>
-    <div
-        class=" overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-gray-800"
-    >
+<template> 
+    <div class="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-gray-800">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -47,9 +38,14 @@ onMounted(async () => {
             <tbody
                 class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800"
             >
-                <MonedaTableRow v-for="m in props.monedas"
+                <MonedaTableRow
+                    v-for="m in props.monedas"
                     :key="m.id"
-                    :moneda="m"/>
+                    :moneda="m"
+                    @deleted="emit('deleted', $event)"
+                    @updated="emit('updated', $event)"
+                    @refresh="$emit('refresh')"
+                />
             </tbody>
         </table>
     </div>
