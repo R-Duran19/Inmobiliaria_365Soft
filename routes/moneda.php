@@ -7,7 +7,7 @@ use App\Http\Controllers\MonedaController;
 // Route::prefix('monedas')
 //     ->name('monedas.')
 //     ->group(function () {
-//         Route::get('/', [MonedaController::class, 'getMonedas'])->name('getMonedas');
+//         Route::patch('/{moneda}/activo', [MonedaController::class, 'setActivo'])->name('setActivo');
         
 //     });
 
@@ -17,11 +17,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->group(function () {
         Route::get('/', [MonedaController::class, 'getMonedas'])->name('getMonedas');
         Route::post('/', [MonedaController::class, 'postMoneda'])->name('postMoneda');
-        // Route::put('/{terreno}', [TerrenoController::class, 'update'])->name('update');
-        // Route::delete('/{terreno}', [TerrenoController::class, 'destroy'])->name('destroy');
-        // Route::patch('/{terreno}/condicion', [TerrenoController::class, 'setCondicion'])->name('condicion');
+        Route::put('/{moneda}', [MonedaController::class, 'putMoneda'])->name('putMoneda');
+        Route::delete('/{moneda}', [MonedaController::class, 'deleteMoneda'])->name('deleteMoneda');
+        Route::patch('/{moneda}/activo', [MonedaController::class, 'setActivo'])->name('setActivo');
         
 
     });
+
+
+    
 
     
