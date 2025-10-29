@@ -216,13 +216,15 @@ async function cargarDocumentos() {
     }
 }
 const puedeSubir = computed(() => {
-    if (archivosArray.value.length === 0) return false;
-
     if (tipoDocumento.value === 'cedula_identidad') {
         return archivosArray.value.length === 2;
     }
 
-    return true;
+    // Para otros documentos
+    return (
+        archivosArray.value.length > 0 ||
+        (archivos.value && archivos.value.length > 0)
+    );
 });
 onMounted(() => {
     cargarDocumentos();
@@ -354,10 +356,27 @@ async function subirArchivos() {
     isUploading.value = true;
 
     try {
-        await axios.post('/documentos/upload', formData, {
+        const response = await axios.post('/documentos/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
-        mostrarNotificacion('success', 'Archivo(s) subido(s) correctamente.');
+
+        // Verificar si es testimonio y tiene datos extraídos
+        if (
+            tipoDocumento.value === 'testimonio' &&
+            response.data.datos_extraidos
+        ) {
+            const numeroTestimonio =
+                response.data.datos_extraidos.numero_testimonio;
+            mostrarNotificacion(
+                'success',
+                `Testimonio N° ${numeroTestimonio} procesado correctamente.`,
+            );
+        } else {
+            mostrarNotificacion(
+                'success',
+                'Archivo(s) subido(s) correctamente.',
+            );
+        }
 
         // Limpiar todo
         archivos.value = null;
@@ -544,9 +563,6 @@ function abrirImagen(url: string) {
                                 <option value="testimonio">
                                     📜 Testimonio de Propiedad
                                 </option>
-                                <option value="certificado_catastral">
-                                    📊 Certificado Catastral
-                                </option>
                                 <option value="cedula_identidad">
                                     🪪 Cédula de Identidad
                                 </option>
@@ -582,22 +598,77 @@ function abrirImagen(url: string) {
 
                         <!-- Input de archivos -->
                         <div class="relative">
+                            <!-- Input oculto -->
                             <input
                                 ref="fileInputRef"
                                 type="file"
                                 :multiple="tipoDocumento !== 'cedula_identidad'"
                                 accept="image/*"
                                 @change="handleFileChange"
-                                class="block w-full cursor-pointer rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600 transition-colors file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-6 file:py-3 file:text-sm file:font-semibold file:text-blue-700 hover:border-blue-400 hover:file:bg-blue-100 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-400 dark:file:bg-blue-900/30 dark:file:text-blue-400 dark:hover:border-blue-500 dark:hover:file:bg-blue-900/50"
+                                class="hidden"
                             />
 
+                            <!-- Botón personalizado -->
+                            <button
+                                @click="fileInputRef?.click()"
+                                type="button"
+                                class="w-full cursor-pointer rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center transition-colors hover:border-blue-400 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-900 dark:hover:border-blue-500 dark:hover:bg-blue-900/30"
+                            >
+                                <div class="flex flex-col items-center gap-2">
+                                    <svg
+                                        class="h-10 w-10 text-gray-400"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                        />
+                                    </svg>
+                                    <span
+                                        class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                    >
+                                        Elegir archivos
+                                    </span>
+                                    <span
+                                        class="text-xs text-gray-500 dark:text-gray-400"
+                                    >
+                                        {{
+                                            archivos && archivos.length > 0
+                                                ? Array.from(archivos)
+                                                      .map((f) => f.name)
+                                                      .join(', ')
+                                                : archivosArray.length > 0
+                                                  ? archivosArray
+                                                        .map((f) => f.name)
+                                                        .join(', ')
+                                                  : 'Ningún archivo seleccionado'
+                                        }}
+                                    </span>
+                                </div>
+                            </button>
+
                             <!-- Contador de archivos seleccionados -->
-                            <div v-if="archivosArray.length > 0" class="mt-2">
+                            <div
+                                v-if="
+                                    archivosArray.length > 0 ||
+                                    (archivos && archivos.length > 0)
+                                "
+                                class="mt-2"
+                            >
                                 <p
                                     class="text-sm font-medium text-gray-700 dark:text-gray-300"
                                 >
-                                    {{ archivosArray.length }} archivo(s)
-                                    seleccionado(s)
+                                    {{
+                                        tipoDocumento === 'cedula_identidad'
+                                            ? archivosArray.length
+                                            : archivos?.length ||
+                                              archivosArray.length
+                                    }}
+                                    archivo(s) seleccionado(s)
                                     <span
                                         v-if="
                                             tipoDocumento === 'cedula_identidad'
@@ -1049,9 +1120,7 @@ function abrirImagen(url: string) {
                             <div
                                 v-if="
                                     infoModal.documento.datos_extraidos
-                                        .matricula ||
-                                    infoModal.documento.datos_extraidos
-                                        .codigo_barras
+                                        .matricula
                                 "
                                 class="space-y-4"
                             >
@@ -1070,58 +1139,29 @@ function abrirImagen(url: string) {
                                     </p>
                                 </div>
                                 <div
-                                    class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                                    class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
                                 >
-                                    <div
-                                        v-if="
+                                    <p
+                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        Matrícula
+                                    </p>
+                                    <p
+                                        class="font-semibold text-gray-900 dark:text-gray-100"
+                                    >
+                                        {{
                                             infoModal.documento.datos_extraidos
                                                 .matricula
-                                        "
-                                        class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
-                                    >
-                                        <p
-                                            class="mb-1 text-sm text-gray-600 dark:text-gray-400"
-                                        >
-                                            Matrícula
-                                        </p>
-                                        <p
-                                            class="font-semibold text-gray-900 dark:text-gray-100"
-                                        >
-                                            {{
-                                                infoModal.documento
-                                                    .datos_extraidos.matricula
-                                            }}
-                                        </p>
-                                    </div>
-                                    <div
-                                        v-if="
-                                            infoModal.documento.datos_extraidos
-                                                .codigo_barras
-                                        "
-                                        class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
-                                    >
-                                        <p
-                                            class="mb-1 text-sm text-gray-600 dark:text-gray-400"
-                                        >
-                                            Código de Barras
-                                        </p>
-                                        <p
-                                            class="font-semibold text-gray-900 dark:text-gray-100"
-                                        >
-                                            {{
-                                                infoModal.documento
-                                                    .datos_extraidos
-                                                    .codigo_barras
-                                            }}
-                                        </p>
-                                    </div>
+                                        }}
+                                    </p>
                                 </div>
                             </div>
 
                             <!-- Testimonio -->
                             <div
                                 v-if="
-                                    infoModal.documento.datos_extraidos.serie &&
+                                    infoModal.documento.datos_extraidos
+                                        .numero_testimonio &&
                                     !infoModal.documento.datos_extraidos
                                         .numero_cedula
                                 "
@@ -1147,57 +1187,14 @@ function abrirImagen(url: string) {
                                     <p
                                         class="mb-1 text-sm text-gray-600 dark:text-gray-400"
                                     >
-                                        Serie
+                                        Número de Testimonio
                                     </p>
                                     <p
                                         class="font-semibold text-gray-900 dark:text-gray-100"
                                     >
                                         {{
                                             infoModal.documento.datos_extraidos
-                                                .serie
-                                        }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Certificado Catastral -->
-                            <div
-                                v-if="
-                                    infoModal.documento.datos_extraidos
-                                        .numero &&
-                                    !infoModal.documento.datos_extraidos
-                                        .numero_cedula
-                                "
-                                class="space-y-4"
-                            >
-                                <div
-                                    class="rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20"
-                                >
-                                    <p
-                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
-                                    >
-                                        Tipo de Documento
-                                    </p>
-                                    <p
-                                        class="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                                    >
-                                        Certificado Catastral
-                                    </p>
-                                </div>
-                                <div
-                                    class="rounded-xl bg-gray-50 p-4 dark:bg-gray-700"
-                                >
-                                    <p
-                                        class="mb-1 text-sm text-gray-600 dark:text-gray-400"
-                                    >
-                                        Número
-                                    </p>
-                                    <p
-                                        class="font-semibold text-gray-900 dark:text-gray-100"
-                                    >
-                                        {{
-                                            infoModal.documento.datos_extraidos
-                                                .numero
+                                                .numero_testimonio
                                         }}
                                     </p>
                                 </div>
