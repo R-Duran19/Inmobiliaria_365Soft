@@ -9,21 +9,19 @@ import type { Terreno } from '@/types/terrenos';
 import { ref } from 'vue';
 import EditarTerrenosDrawer from '../EditarTerrenosDrawer.vue';
 
-
 const props = defineProps<{ terreno: Terreno }>();
 const emit = defineEmits(['updated', 'deleted', 'costos']);
 const editarVisible = ref(false);
 
 const camposTerreno = [
     { key: 'proyecto.nombre', label: 'Proyecto' },
-    { key: 'numero_terreno', label: 'N° Terreno' }, 
+    { key: 'numero_terreno', label: 'N° Terreno' },
     { key: 'ubicacion', label: 'Ubicación' },
     { key: 'categoria', label: 'Categoría' },
-    { key: 'barrio', label: 'Barrio' }, 
-    { key: 'cuadra', label: 'Cuadra' }, 
+    { key: 'barrio', label: 'Barrio' },
+    { key: 'cuadra', label: 'Cuadra' },
     { key: 'superficie', label: 'Superficie' },
 ];
-
 
 const abrirSubidaDocumento = () => {
     const id = props.terreno.id;
@@ -134,14 +132,14 @@ function obtenerValor(obj: any, ruta: string) {
         >
             {{
                 campo.key === 'proyecto.nombre'
-                    ? terreno.proyecto?.nombre ?? ''
+                    ? (terreno.proyecto?.nombre ?? '')
                     : campo.key === 'categoria'
-                        ? terreno.categorias_terrenos?.nombre ?? ''
-                        : campo.key === 'barrio'
-                            ? terreno.cuadra?.barrio?.nombre ?? ''
-                            : campo.key === 'cuadra'
-                                ? terreno.cuadra?.nombre ?? ''
-                                : terreno[campo.key as keyof Terreno]
+                      ? (terreno.categorias_terrenos?.nombre ?? '')
+                      : campo.key === 'barrio'
+                        ? (terreno.cuadra?.barrio?.nombre ?? '')
+                        : campo.key === 'cuadra'
+                          ? (terreno.cuadra?.nombre ?? '')
+                          : terreno[campo.key as keyof Terreno]
             }}
         </td>
 
@@ -174,12 +172,9 @@ function obtenerValor(obj: any, ruta: string) {
         </td>
     </tr>
     <EditarTerrenosDrawer
-    :visible="editarVisible"
-    :terreno="terreno"
-    @update:visible="editarVisible = $event"
-    @updated="emit('updated', $event)"
-/>
-
-
-
+        :visible="editarVisible"
+        :terreno="terreno"
+        @update:visible="editarVisible = $event"
+        @updated="emit('updated', $event)"
+    />
 </template>
