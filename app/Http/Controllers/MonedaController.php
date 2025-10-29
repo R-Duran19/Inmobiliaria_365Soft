@@ -15,7 +15,6 @@ class MonedaController extends Controller
         return response()->json([
             'monedas' => $monedas,
         ]);
-
     }
 
     public function postMoneda(Request $request)
@@ -23,7 +22,7 @@ class MonedaController extends Controller
    
         $data = $request->validate([
             'nombre' => 'required|string|max:50', 
-            'pais' => 'required|string|max:30',
+            'pais' => 'required|string|max:100',
             'abreviacion' => 'required|string|max:255',
             'tipo_cambio' => 'required|decimal:0,2',
             'activo' => 'required|boolean',
@@ -36,5 +35,45 @@ class MonedaController extends Controller
             'success' => true,
             'moneda' => $moneda,
         ], 201);
+    }
+
+    public function deleteMoneda($id)
+    {
+        $moneda = Moneda::findOrFail($id);
+        $moneda->delete();
+        return response()->json(null, 204);
+    }
+
+    public function putMoneda(Request $request, $id)
+    {
+        $moneda = Moneda::findOrFail($id);
+
+        $data = $request->validate([
+            'nombre' => 'required|string|max:50', 
+            'pais' => 'required|string|max:100',
+            'abreviacion' => 'required|string|max:255',
+            'tipo_cambio' => 'required|decimal:0,2',
+            'activo' => 'required|boolean',
+        ]);
+
+
+        $moneda->update($data);
+
+
+        return response()->json([
+            'success' => true,
+            'moneda' => $moneda
+        ]);
+    }
+
+    public function setActivo($id)
+    {
+        $moneda = Moneda::findOrFail($id);
+        $moneda->activo = !$moneda->activo; 
+        $moneda->save();
+
+        return response()->json([
+            'message' => 'Moneda actualizada correctamente'
+        ]);
     }
 }
