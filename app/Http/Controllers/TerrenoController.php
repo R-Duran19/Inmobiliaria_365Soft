@@ -1,29 +1,30 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Terreno;
-use App\Models\Proyecto;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use MatanYadaev\EloquentSpatial\Objects\Point;
-use MatanYadaev\EloquentSpatial\Objects\LineString;
-use MatanYadaev\EloquentSpatial\Objects\Polygon;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
+
 use App\Http\Exports\TerrenosExport;
+use App\Models\Proyecto;
+use App\Models\Terreno;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use MatanYadaev\EloquentSpatial\Objects\LineString;
+use MatanYadaev\EloquentSpatial\Objects\Point;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
 
 class TerrenoController extends Controller
 {
-    
     public function index(Request $request)
     {
         $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'idcuadra', 'numero_terreno', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion')
-        ->with([
-            'proyecto:id,nombre',
-            'categorias_terrenos:id,nombre',
-            'cuadra:id,nombre,idbarrio',
-            'cuadra.barrio:id,nombre' 
-        ]);
+            ->with([
+                'proyecto:id,nombre',
+                'categorias_terrenos:id,nombre',
+                'cuadra:id,nombre,idbarrio',
+                'cuadra.barrio:id,nombre'
+            ]);
 
         if ($request->has('ubicacion')) {
             $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
@@ -39,32 +40,34 @@ class TerrenoController extends Controller
 
         $terrenos = $query->get();
 
-    return Inertia::render('Terrenos', [
-        'terrenos' => $terrenos,
-    ]);
-    // return response()->json([
-    //     'terrenos' => $terrenos,
-    // ]);
+        return Inertia::render('Terrenos', [
+            'terrenos' => $terrenos,
+        ]);
+        // return response()->json([
+        //     'terrenos' => $terrenos,
+        // ]);
+    }
 
-}
-
-
-
-    
     public function store(Request $request)
     {
-   
         $data = $request->validate([
             'idproyecto' => 'required|exists:proyectos,id',
             'idcategoria' => 'required|exists:categorias_terrenos,id',
+            // 'idbarrio' => 'required|exists:barrios,id',
             'idcuadra' => 'required|exists:cuadras,id',
-            'numero_terreno' => 'nullable|numeric', 
+            'numero_terreno' => [
+                'required',
+                'numeric',
+                Rule::unique('terrenos')->where(function ($query) use ($request) {
+                    return $query->where('idproyecto', $request->idproyecto);
+                })
+            ],
             'ubicacion' => 'required|string|max:255',
             'superficie' => 'required|string|max:255',
-            'cuota_inicial' => 'required|numeric',
-            'cuota_mensual' => 'required|numeric',
-            'precio_venta' => 'required|numeric',
-            'estado' => 'nullable|integer',
+            'cuota_inicial' => 'required|numeric|min:0',
+            'cuota_mensual' => 'required|numeric|min:0',
+            'precio_venta' => 'required|numeric|min:0',
+            'estado' => 'nullable|integer|in:0,1,2',  // 0=Disponible, 1=Reservado, 2=Vendido
             'condicion' => 'nullable|boolean',
             'poligono_geojson' => 'nullable|array',
         ]);
@@ -80,7 +83,7 @@ class TerrenoController extends Controller
         // Crear el terreno
         $terreno = Terreno::create($data);
 
-        // Cargar relaciones
+        // Cargar relaciones consistentemente
         $terreno->load(['proyecto', 'categorias_terrenos', 'cuadra.barrio']);
 
         return response()->json([
@@ -89,7 +92,6 @@ class TerrenoController extends Controller
         ], 201);
     }
 
-    
     public function update(Request $request, $id)
     {
         $terreno = Terreno::findOrFail($id);
@@ -97,17 +99,26 @@ class TerrenoController extends Controller
         $data = $request->validate([
             'idproyecto' => 'required|exists:proyectos,id',
             'idcategoria' => 'required|exists:categorias_terrenos,id',
+            // 'idbarrio' => 'required|exists:barrios,id',
             'idcuadra' => 'required|exists:cuadras,id',
-            'numero_terreno' => 'nullable|numeric', 
+            'numero_terreno' => [
+                'required',
+                'numeric',
+                Rule::unique('terrenos')->where(function ($query) use ($request) {
+                    return $query->where('idproyecto', $request->idproyecto);
+                })->ignore($id)
+            ],
             'ubicacion' => 'required|string|max:255',
             'superficie' => 'required|string|max:255',
-            'cuota_inicial' => 'required|numeric',
-            'cuota_mensual' => 'required|numeric',
-            'precio_venta' => 'required|numeric',
-            'estado' => 'nullable|integer',
+            'cuota_inicial' => 'required|numeric|min:0',
+            'cuota_mensual' => 'required|numeric|min:0',
+            'precio_venta' => 'required|numeric|min:0',
+            'estado' => 'nullable|integer|in:0,1,2',
             'condicion' => 'nullable|boolean',
+            'poligono_geojson' => 'nullable|array',  // ✅ AGREGADO
         ]);
 
+        // Convertir GeoJSON a Polygon si viene
         if (isset($data['poligono_geojson'])) {
             $coordinates = $data['poligono_geojson']['coordinates'][0];
             $points = array_map(fn($coord) => new Point($coord[1], $coord[0]), $coordinates);
@@ -117,7 +128,8 @@ class TerrenoController extends Controller
 
         $terreno->update($data);
 
-        $terreno->load(['proyecto', 'categorias_terrenos', 'cuadra']);
+        // Cargar relaciones consistentemente
+        $terreno->load(['proyecto', 'categorias_terrenos', 'cuadra.barrio']);
 
         return response()->json([
             'success' => true,
@@ -125,8 +137,6 @@ class TerrenoController extends Controller
         ]);
     }
 
-
-    
     public function destroy($id)
     {
         $terreno = Terreno::findOrFail($id);
@@ -137,7 +147,7 @@ class TerrenoController extends Controller
     public function setCondicion($id)
     {
         $terreno = Terreno::findOrFail($id);
-        $terreno->condicion = !$terreno->condicion; 
+        $terreno->condicion = !$terreno->condicion;
         $terreno->save();
 
         return response()->json([
@@ -147,7 +157,6 @@ class TerrenoController extends Controller
         ]);
     }
 
-    
     public function export($idproyecto)
     {
         $terrenos = \App\Models\Terreno::where('idproyecto', $idproyecto)
@@ -172,36 +181,26 @@ class TerrenoController extends Controller
         exit;
     }
 
-
-
-
-
-
     public function getTerrenos(Request $request)
     {
-        
         $query = Terreno::select('id', 'idproyecto', 'idcategoria', 'idcuadra', 'numero_terreno', 'ubicacion', 'superficie', 'cuota_inicial', 'cuota_mensual', 'precio_venta', 'estado', 'condicion')
-        ->with([
-            'proyecto:id,nombre',
-            'categorias_terrenos:id,nombre',
-            'cuadra:id,nombre,idbarrio',
-            'cuadra.barrio:id,nombre'   
-        ]);
+            ->with([
+                'proyecto:id,nombre',
+                'categorias_terrenos:id,nombre',
+                'cuadra:id,nombre,idbarrio',
+                'cuadra.barrio:id,nombre'
+            ]);
 
-        
         if ($request->has('ubicacion') && $request->ubicacion) {
             $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
         }
 
-        
         if ($request->has('idcategoria') && $request->idcategoria) {
             $query->where('idcategoria', $request->idcategoria);
         }
 
-        
         $terrenos = $query->get();
 
-        
         return response()->json([
             'success' => true,
             'terrenos' => $terrenos,
@@ -216,6 +215,7 @@ class TerrenoController extends Controller
             'proyecto' => $terreno->proyecto,
         ]);
     }
+
     public function getTerrenosPorProyecto($idproyecto)
     {
         try {
@@ -234,5 +234,4 @@ class TerrenoController extends Controller
             ], 500);
         }
     }
-
 }

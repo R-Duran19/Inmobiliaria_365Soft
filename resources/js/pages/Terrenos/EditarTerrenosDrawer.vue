@@ -24,10 +24,22 @@ interface Categoria {
     id: number;
     nombre: string;
 }
+interface Barrio {
+    id: number;
+    nombre: string;
+}
+
+interface Cuadra {
+    id: number;
+    nombre: string;
+}
 
 const form = reactive({
     idproyecto: '' as number | '',
     idcategoria: 0 as number,
+    idbarrio: 0 as number, // ✅ NUEVO
+    idcuadra: 0 as number, // ✅ NUEVO
+    numero_terreno: '' as string, // ✅ NUEVO
     ubicacion: '' as string,
     superficie: null as string | null,
     precio_venta: null as number | null,
@@ -38,6 +50,8 @@ const form = reactive({
 });
 
 const categorias = ref<Categoria[]>([]);
+const barrios = ref<Barrio[]>([]);
+const cuadras = ref<Cuadra[]>([]);
 
 const emit = defineEmits<{
     (e: 'update:visible', val: boolean): void;
@@ -66,6 +80,29 @@ async function cargarCategorias() {
         categorias.value = [];
     }
 }
+async function cargarBarrios() {
+    if (!form.idproyecto) return;
+    try {
+        const { data } = await axios.get(
+            `/barrios/proyecto/${form.idproyecto}`,
+        );
+        barrios.value = data.barrios || [];
+    } catch (error) {
+        console.error('Error al obtener barrios:', error);
+        barrios.value = [];
+    }
+}
+
+async function cargarCuadras() {
+    if (!form.idbarrio) return;
+    try {
+        const { data } = await axios.get(`/cuadras/barrio/${form.idbarrio}`);
+        cuadras.value = data.cuadras || [];
+    } catch (error) {
+        console.error('Error al obtener cuadras:', error);
+        cuadras.value = [];
+    }
+}
 
 async function cargarProyectos() {
     try {
@@ -83,12 +120,22 @@ watch(
         // Cargar categorías del proyecto
         await cargarCategorias();
 
+        // Cargar barrios del proyecto
+        await cargarBarrios();
+
         // Resetear categoría si no hay disponibles
         if (!categorias.value.length) {
             form.idcategoria = 0;
         } else {
-            // Opcional: si quieres seleccionar la primera categoría automáticamente
             form.idcategoria = props.terreno?.idcategoria ?? 1;
+        }
+    },
+);
+watch(
+    () => form.idbarrio,
+    async (newIdBarrio) => {
+        if (newIdBarrio) {
+            await cargarCuadras();
         }
     },
 );
@@ -104,6 +151,9 @@ watch(
         if (t) {
             form.idproyecto = t.idproyecto;
             form.idcategoria = t.idcategoria ?? 0;
+            form.idbarrio = t.cuadra?.barrio?.id ?? 0;
+            form.idcuadra = t.cuadra?.id ?? 0;
+            form.numero_terreno = String(t.numero_terreno ?? '');
             form.ubicacion = t.ubicacion;
             form.superficie = t.superficie;
             form.precio_venta = t.precio_venta;
@@ -126,6 +176,7 @@ const loading = ref(false);
 async function actualizarTerreno() {
     if (!props.terreno) return;
 
+    // Validaciones
     if (!form.idcategoria) {
         notificacion.tipo = 'error';
         notificacion.mensaje =
@@ -133,11 +184,25 @@ async function actualizarTerreno() {
         notificacion.visible = true;
         return;
     }
-    console.log('mandando terreno ', props.terreno);
+
+    if (!form.idbarrio) {
+        notificacion.tipo = 'error';
+        notificacion.mensaje = 'Debe seleccionar un barrio antes de actualizar';
+        notificacion.visible = true;
+        return;
+    }
+
+    if (!form.idcuadra) {
+        notificacion.tipo = 'error';
+        notificacion.mensaje =
+            'Debe seleccionar una cuadra antes de actualizar';
+        notificacion.visible = true;
+        return;
+    }
+
     loading.value = true;
     try {
         const { data } = await axios.put(`/terrenos/${props.terreno.id}`, form);
-        console.log('EDIDTADNOOOOFDSA ', data);
         notificacion.tipo = 'success';
         notificacion.mensaje = 'Terreno actualizado correctamente';
         notificacion.visible = true;
@@ -163,7 +228,6 @@ async function actualizarTerreno() {
             <div
                 class="flex h-full w-96 flex-col overflow-auto bg-white p-6 shadow-2xl dark:bg-gray-900"
             >
-                
                 <div
                     class="mb-6 flex items-center justify-between border-b border-gray-200 pb-2 dark:border-gray-700"
                 >
@@ -181,7 +245,6 @@ async function actualizarTerreno() {
                 </div>
 
                 <div class="flex-1 space-y-4">
-                    
                     <label class="block font-medium">Proyecto</label>
                     <div class="relative">
                         <select
@@ -217,7 +280,7 @@ async function actualizarTerreno() {
                             </svg>
                         </div>
                     </div>
-                    
+
                     <label class="mt-2 block font-medium">Categoría</label>
                     <select
                         v-model="form.idcategoria"
@@ -235,14 +298,55 @@ async function actualizarTerreno() {
                         </option>
                     </select>
 
-                    
+                    <!-- N° Terreno -->
+                    <label class="block font-medium">N° Terreno</label>
+                    <input
+                        v-model="form.numero_terreno"
+                        type="number"
+                        min="1"
+                        class="w-full rounded border px-3 py-2"
+                    />
+
+                    <!-- Barrio -->
+                    <label class="block font-medium">Barrio</label>
+                    <select
+                        v-model="form.idbarrio"
+                        class="w-full rounded border px-3 py-2"
+                    >
+                        <option disabled value="0">Selecciona un barrio</option>
+                        <option
+                            v-for="barrio in barrios"
+                            :key="barrio.id"
+                            :value="barrio.id"
+                        >
+                            {{ barrio.nombre }}
+                        </option>
+                    </select>
+
+                    <!-- Cuadra -->
+                    <label class="block font-medium">Cuadra</label>
+                    <select
+                        v-model="form.idcuadra"
+                        class="w-full rounded border px-3 py-2"
+                    >
+                        <option disabled value="0">
+                            Selecciona una cuadra
+                        </option>
+                        <option
+                            v-for="cuadra in cuadras"
+                            :key="cuadra.id"
+                            :value="cuadra.id"
+                        >
+                            {{ cuadra.nombre }}
+                        </option>
+                    </select>
+
                     <label class="block font-medium">Ubicación</label>
                     <input
                         v-model="form.ubicacion"
                         class="w-full rounded border px-3 py-2"
                     />
 
-                    
                     <label class="block font-medium">Superficie</label>
                     <input
                         type="text"
@@ -250,7 +354,6 @@ async function actualizarTerreno() {
                         class="w-full rounded border px-3 py-2"
                     />
 
-                    
                     <label class="block font-medium">Precio de venta</label>
                     <input
                         type="number"
@@ -258,7 +361,6 @@ async function actualizarTerreno() {
                         class="w-full rounded border px-3 py-2"
                     />
 
-                    
                     <label class="block font-medium">Cuota inicial</label>
                     <input
                         type="number"
@@ -266,7 +368,6 @@ async function actualizarTerreno() {
                         class="w-full rounded border px-3 py-2"
                     />
 
-                    
                     <label class="block font-medium">Cuota mensual</label>
                     <input
                         type="number"
@@ -274,7 +375,6 @@ async function actualizarTerreno() {
                         class="w-full rounded border px-3 py-2"
                     />
 
-                    
                     <label class="block font-medium">Estado</label>
                     <select
                         v-model="form.estado"
@@ -285,7 +385,6 @@ async function actualizarTerreno() {
                         <option value="2">Vendido</option>
                     </select>
 
-                    
                     <div class="mt-2 flex items-center gap-2">
                         <input
                             type="checkbox"
@@ -293,13 +392,12 @@ async function actualizarTerreno() {
                             v-model="form.condicion"
                             class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span class="ml-2">{{ form.condicion ? 'Activo' : 'Inactivo' }}</span>
-
+                        <span class="ml-2">{{
+                            form.condicion ? 'Activo' : 'Inactivo'
+                        }}</span>
                     </div>
                 </div>
 
-                
-                
                 <button
                     @click="actualizarTerreno"
                     :disabled="loading"

@@ -106,17 +106,27 @@ onMounted(() => {
 
 async function guardarTerreno(formData: any) {
     try {
-        // ✅ Verificar que haya un proyecto seleccionado
+        // Verificar que haya un proyecto seleccionado
         if (!form.idproyecto) {
             mostrarNotificacion('error', 'Debe seleccionar un proyecto antes de crear un nuevo terreno');
             return;
         }
 
-        // ✅ Asegurarse de enviar el idproyecto seleccionado
+        // Asegurarse de enviar el idproyecto seleccionado
         formData.idproyecto = form.idproyecto;
 
         if (!formData.idcategoria) {
             mostrarNotificacion('error', 'Debe seleccionar una categoría antes de crear un nuevo terreno');
+            return;
+        }
+
+        if (!formData.idbarrio) {
+            mostrarNotificacion('error', 'Debe seleccionar un barrio antes de crear un nuevo terreno');
+            return;
+        }
+
+        if (!formData.idcuadra) {
+            mostrarNotificacion('error', 'Debe seleccionar una cuadra antes de crear un nuevo terreno');
             return;
         }
 

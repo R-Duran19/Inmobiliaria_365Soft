@@ -88,28 +88,11 @@ function volverAProyectos() {
     mostrandoTerrenos.value = false;
 }
 
-async function guardarTerreno(formData: any) {
-    try {
-        if (!form.idproyecto) {
-            mostrarNotificacion('error', 'Debe seleccionar un proyecto antes de crear un nuevo terreno');
-            return;
-        }
-
-        formData.idproyecto = form.idproyecto;
-
-        if (!formData.idcategoria) {
-            mostrarNotificacion('error', 'Debe seleccionar una categoría antes de crear un nuevo terreno');
-            return;
-        }
-
-        const { data } = await axios.post('/terrenos', formData);
-        terrenos.value.push(data.terreno);
-        estadoDialogos.nuevoTerrenoVisible = false;
-        mostrarNotificacion('success', 'Terreno guardado correctamente');
-    } catch (error) {
-        console.error('Error guardando terreno:', error);
-        mostrarNotificacion('error', 'Error al guardar el terreno');
-    }
+function guardarTerreno(terreno: any) {
+    // El POST ya se hizo en NuevoTerrenoDrawer, solo agregamos a la lista
+    terrenos.value.push(terreno);
+    estadoDialogos.nuevoTerrenoVisible = false;
+    mostrarNotificacion('success', 'Terreno guardado correctamente');
 }
 
 function abrirCostos(terreno: Terreno) {

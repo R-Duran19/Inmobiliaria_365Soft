@@ -40,10 +40,10 @@ const cuadras = ref<Cuadra[]>([]);
 const loading = ref(false);
 
 const form = reactive({
-    idproyecto: null as number | null, // ✅
-    idcategoria: 0,
-    idbarrio: 0,
-    idcuadra: 0,
+    idproyecto: null as number | null,
+    idcategoria: '' as number | '',
+    idbarrio: '' as number | '',
+    idcuadra: '' as number | '',
     numero_terreno: '',
     ubicacion: '',
     superficie: '',
@@ -97,7 +97,9 @@ async function cargarCategorias() {
 
 async function cargarBarrios() {
     try {
-        const { data } = await axios.get(`/barrios/proyecto/${form.idproyecto}`);
+        const { data } = await axios.get(
+            `/barrios/proyecto/${form.idproyecto}`,
+        );
         barrios.value = data.barrios || [];
     } catch (error) {
         console.error('Error al obtener barrios:', error);
@@ -106,6 +108,8 @@ async function cargarBarrios() {
 }
 
 async function cargarCuadras() {
+    if (!form.idbarrio) return;
+
     try {
         const { data } = await axios.get(`/cuadras/barrio/${form.idbarrio}`);
         cuadras.value = data.cuadras || [];
@@ -117,25 +121,77 @@ async function cargarCuadras() {
 
 watch(() => form.idproyecto, cargarCategorias);
 
-watch(() => form.idproyecto, (newIdProyecto) => {
-    if (newIdProyecto) {
-        cargarBarrios();
-    }
-});
+watch(
+    () => form.idproyecto,
+    (newIdProyecto) => {
+        if (newIdProyecto) {
+            cargarBarrios();
+        }
+    },
+);
 
-watch(() => form.idbarrio, (newIdBarrio) => {
-    if (newIdBarrio) {
-        cargarCuadras();
-    }
-});
+watch(
+    () => form.idbarrio,
+    (newIdBarrio) => {
+        if (newIdBarrio) {
+            cargarCuadras();
+        } else {
+            cuadras.value = [];
+        }
+    },
+);
 
 async function guardarTerreno() {
+    // Validaciones locales antes de enviar
+    if (!form.idproyecto) {
+        alert('Debe seleccionar un proyecto');
+        return;
+    }
+
+    if (!form.idcategoria) {
+        alert('Debe seleccionar una categoría');
+        return;
+    }
+
+    if (!form.idbarrio) {
+        alert('Debe seleccionar un barrio');
+        return;
+    }
+
+    if (!form.idcuadra) {
+        alert('Debe seleccionar una cuadra');
+        return;
+    }
+
+    if (!form.numero_terreno) {
+        alert('Debe ingresar el número de terreno');
+        return;
+    }
+
+    if (!form.ubicacion) {
+        alert('Debe ingresar la ubicación');
+        return;
+    }
+
+    loading.value = true;
+
     try {
         const response = await axios.post('/terrenos', form);
         emit('created', response.data.terreno);
-        emit('close'); 
-    } catch (error) {
+        emit('close');
+    } catch (error: any) {
         console.error('Error al guardar el terreno:', error);
+
+        // Mostrar errores de validación del backend
+        if (error.response?.data?.errors) {
+            const errors = error.response.data.errors;
+            const errorMessages = Object.values(errors).flat().join('\n');
+            alert(errorMessages);
+        } else {
+            alert('Error al guardar el terreno');
+        }
+    } finally {
+        loading.value = false;
     }
 }
 </script>
@@ -158,9 +214,7 @@ async function guardarTerreno() {
                 </button>
             </div>
 
-            
             <div class="space-y-4">
-                
                 <div class="mb-4">
                     <label class="mb-1 block font-medium">Proyecto</label>
                     <div class="relative">
@@ -180,7 +234,7 @@ async function guardarTerreno() {
                                 {{ p.nombre }}
                             </option>
                         </select>
-                        
+
                         <div
                             class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400"
                         >
@@ -205,12 +259,12 @@ async function guardarTerreno() {
                     <label class="mb-1 block font-medium">N° Terreno</label>
                     <input
                         v-model="form.numero_terreno"
-                        type="number"  
-                        min="1" 
+                        type="number"
+                        min="1"
                         class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
                     />
                 </div>
-                
+
                 <div>
                     <label class="mb-1 block font-medium">Categoría</label>
                     <select
@@ -236,7 +290,7 @@ async function guardarTerreno() {
                         v-model="form.idbarrio"
                         class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
                     >
-                        <option disabled value="0">Selecciona un barrio</option>
+                        <option disabled value="">Selecciona un barrio</option>
                         <option
                             v-for="barrio in barrios"
                             :key="barrio.id"
@@ -249,11 +303,12 @@ async function guardarTerreno() {
 
                 <div class="mb-4">
                     <label class="mb-1 block font-medium">Cuadra</label>
+
                     <select
                         v-model="form.idcuadra"
                         class="w-full rounded border bg-gray-50 px-3 py-2 dark:bg-gray-800"
                     >
-                        <option disabled value="0">Selecciona una cuadra</option>
+                        <option disabled value="">Selecciona una cuadra</option>
                         <option
                             v-for="cuadra in cuadras"
                             :key="cuadra.id"
@@ -263,7 +318,7 @@ async function guardarTerreno() {
                         </option>
                     </select>
                 </div>
-                
+
                 <div>
                     <label class="mb-1 block font-medium">Ubicación</label>
                     <input
@@ -273,7 +328,6 @@ async function guardarTerreno() {
                     />
                 </div>
 
-                
                 <div>
                     <label class="mb-1 block font-medium"
                         >Superficie (m²)</label
@@ -286,7 +340,6 @@ async function guardarTerreno() {
                     />
                 </div>
 
-                
                 <div>
                     <label class="mb-1 block font-medium"
                         >Precio de venta</label
@@ -299,7 +352,6 @@ async function guardarTerreno() {
                     />
                 </div>
 
-                
                 <div>
                     <label class="mb-1 block font-medium">Cuota inicial</label>
                     <input
@@ -310,7 +362,6 @@ async function guardarTerreno() {
                     />
                 </div>
 
-                
                 <div>
                     <label class="mb-1 block font-medium">Cuota mensual</label>
                     <input
@@ -321,7 +372,6 @@ async function guardarTerreno() {
                     />
                 </div>
 
-                
                 <div>
                     <label class="mb-1 block font-medium">Estado</label>
                     <select
@@ -335,7 +385,6 @@ async function guardarTerreno() {
                 </div>
             </div>
 
-            
             <div class="mt-2 flex items-center gap-2">
                 <input
                     type="checkbox"
@@ -346,7 +395,6 @@ async function guardarTerreno() {
                 <label for="condicion" class="font-medium">Activo</label>
             </div>
 
-            
             <div class="mt-6 flex justify-end gap-2">
                 <button
                     @click="emit('close')"
