@@ -41,3 +41,4 @@ require __DIR__ . '/cuadras.php';
 require __DIR__.'/importacion.php';
 require __DIR__.'/ventas.php';
 require __DIR__.'/moneda.php';
+require __DIR__.'/createmap.php';
