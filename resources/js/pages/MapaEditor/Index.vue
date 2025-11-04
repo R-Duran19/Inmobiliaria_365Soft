@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, reactive } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import L from 'leaflet';
@@ -7,8 +7,12 @@ import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import 'leaflet/dist/leaflet.css';
 import { useToast } from 'primevue/usetoast';
+import { ConfirmacionModal } from '@/components/ui/confirmacionModal';
 
 const toast = useToast();
+const estadoDialogos = reactive({
+  confirmacionVisible: false,
+});
 // Tipos
 interface BreadcrumbItem {
   title: string;
@@ -45,10 +49,7 @@ interface PoligonoGuardado {
 }
 
 // Breadcrumbs
-const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'Importar Mapa', href: '/importarmapa' },
-  { title: 'Editor de Mapas', href: '/mapa-editor' },
-];
+
 
 // Estado
 const loading = ref(false);
@@ -181,12 +182,11 @@ const cargarCuadrasForTerreno = async (idBarrio: number) => {
 };
 
 const limpiarCampos = () => {
-  numeroTerreno.value = '';
   superficieTerreno.value = '';
   selectedCategoria.value = null;
-  selectedBarrioForTerreno.value = null;
-  selectedCuadraForTerreno.value = null;
-  cuadrasForTerreno.value = [];
+  // selectedBarrioForTerreno.value = null;
+  // selectedCuadraForTerreno.value = null;
+  // cuadrasForTerreno.value = [];
 };
 
 const validarFormulario = (): string | null => {
@@ -242,10 +242,12 @@ let properties: any = { tipo: tipoPoligono.value };
     const barrioSeleccionado = barrios.value.find(b => b.id === selectedBarrio.value);
     properties.nombre = barrioSeleccionado?.nombre || '';
     properties.idproyecto = selectedProyecto.value;
+    selectedBarrio.value = null;
   } else if (tipoPoligono.value === 'cuadra') {
     const cuadraSeleccionada = cuadras.value.find(c => c.id === selectedCuadra.value);
     properties.nombre = cuadraSeleccionada?.nombre || '';
     properties.idbarrio = selectedBarrio.value;
+    selectedCuadra.value = null;
   } else if (tipoPoligono.value === 'terreno') {
     properties.numero = numeroTerreno.value;
     properties.idcuadra = selectedCuadraForTerreno.value;
@@ -425,16 +427,44 @@ const initMap = () => {
   });
 };
 
+const eliminarPendientes = () => {
+  // Borra los polígonos del mapa
+  // Si existen polígonos guardados
+  if (poligonosGuardados.value.length > 0) {
+    // Eliminar del mapa cada capa
+    poligonosGuardados.value.forEach(p => {
+      if (p.layer && map) {
+        map.removeLayer(p.layer);
+      }
+    });
+  }
+
+  // Limpia la lista interna de polígonos
+  poligonosGuardados.value = [];
+
+  toast.add({
+    severity: 'success',
+    summary: 'Limpieza completada',
+    detail: 'Se eliminaron todos los polígonos pendientes',
+    life: 3000
+  });
+
+  // Cierra el modal
+  estadoDialogos.confirmacionVisible = false;
+};
+
+
 onMounted(() => {
   cargarDatosIniciales();
   initMap();
 });
 </script>
 <template>
-  <AppLayout :breadcrumbs="breadcrumbs">
+  <AppLayout>
     <Head title="Editor de Mapas" />
     
     <div class="h-screen flex flex-col">
+      <ConfirmacionModal v-model="estadoDialogos.confirmacionVisible" title="Confirmar eliminación" message="¿Estás seguro de que deseas eliminar TODOS los poligonos creados recientemente?" @confirm="eliminarPendientes" />
       <!-- Header -->
       <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-4 shadow-lg">
         <div class="flex items-center gap-4">
@@ -624,7 +654,7 @@ onMounted(() => {
             </button>
             
             <button 
-              @click="limpiarDibujo"
+              @click="estadoDialogos.confirmacionVisible = true"
               class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
             >
               🗑️ Limpiar Dibujo
