@@ -8,6 +8,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->get('mapa-editor', [PolygonEditorController::class, 'index'])
     ->name('mapa-editor');
 
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->get('mapa-editor/{proyecto}', [PolygonEditorController::class, 'irIndex'])
+    ->name('mapa-editor.proyecto');
+
+
 // Rutas API del editor de polígonos
 Route::middleware(['auth', 'verified', 'role:admin'])
     ->prefix('polygon-editor')
@@ -24,4 +30,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         
         Route::post('/save', [PolygonEditorController::class, 'savePolygons'])
             ->name('save');
+
+        Route::get('/poligonos/{proyecto}', [PolygonEditorController::class, 'getPoligonos']);
+
     });

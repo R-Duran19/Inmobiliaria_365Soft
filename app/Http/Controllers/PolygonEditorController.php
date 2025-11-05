@@ -25,6 +25,15 @@ class PolygonEditorController extends Controller
     {
         return inertia('MapaEditor/Index');
     }
+
+    public function irIndex($proyecto)
+    {
+        return inertia('MapaEditor/Index', [
+            'selectedProyectoId' => $proyecto
+        ]);
+    }
+
+
     
     public function getInitialData(Request $request)
     {
@@ -174,9 +183,11 @@ DB::commit();
 Log::info('✅ Polígonos guardados exitosamente', ['resultado' => $result]);
 
 return redirect()->back()->with([
-    'success' => true,
-    'message' => 'Polígonos guardados exitosamente',
-    'resultado' => $result,
+    'flash' => [
+        'success' => true,
+        'message' => 'Polígonos guardados exitosamente',
+        'resultado' => $result,
+    ]
 ]);
     } catch (\Exception $e) {
 DB::rollBack();
@@ -386,4 +397,66 @@ return redirect()->back()->withErrors([
 
         return new Polygon([new LineString($points)]);
     }
+
+    // public function getPoligonos($proyectoId)
+    // {
+    //     $barrios = Barrio::where('idproyecto', $proyectoId)->whereNotNull('poligono')->get();
+    //     $cuadras = Cuadra::whereHas('barrio', fn($q) => $q->where('idproyecto', $proyectoId))->whereNotNull('poligono')->get();
+    //     $terrenos = Terreno::whereHas('cuadra.barrio', fn($q) => $q->where('idproyecto', $proyectoId))->whereNotNull('poligono')->get();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => [
+    //             'barrios' => $barrios,
+    //             'cuadras' => $cuadras,
+    //             'terrenos' => $terrenos,
+    //         ]
+    //     ]);
+    // }
+
+public function getPoligonos($idProyecto)
+{
+    $barrios = Barrio::where('idproyecto', $idProyecto)
+        ->whereNotNull('poligono')
+        ->get();
+
+    $cuadras = Cuadra::whereHas('barrio', fn($q) =>
+        $q->where('idproyecto', $idProyecto)
+    )
+    ->whereNotNull('poligono')
+    ->get();
+
+    $terrenos = Terreno::whereHas('cuadra.barrio', fn($q) =>
+        $q->where('idproyecto', $idProyecto)
+    )
+    ->whereNotNull('poligono')
+    ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'barrios' => $barrios->map(function ($barrio) {
+                return [
+                    'nombre' => $barrio->nombre,
+                    'geometry' => $barrio->poligono, // Usa el accessor
+                ];
+            }),
+            'cuadras' => $cuadras->map(function ($cuadra) {
+                return [
+                    'nombre' => $cuadra->nombre,
+                    'geometry' => $cuadra->poligono, // Usa el accessor
+                ];
+            }),
+            'terrenos' => $terrenos->map(function ($terreno) {
+                return [
+                    'numero' => $terreno->numero_terreno,
+                    'geometry' => $terreno->poligono, // Usa el accessor
+                ];
+            }),
+        ],
+    ]);
+}
+
+
+
 }
