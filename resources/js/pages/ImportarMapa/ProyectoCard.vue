@@ -8,8 +8,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { router } from '@inertiajs/vue3';
 import EstadisticaItem from './Estadisticaitem.vue';
-
 interface Estadisticas {
     total: number;
     con_poligono: number;
@@ -45,9 +45,7 @@ const emit = defineEmits<{
                 class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
             >
                 <div class="flex-1">
-                    <div
-                        class="flex gap-2 sm:flex-row sm:items-center"
-                    >
+                    <div class="flex gap-2 sm:flex-row sm:items-center">
                         <CardTitle
                             class="text-lg font-semibold text-gray-800 dark:text-gray-100"
                         >
@@ -67,7 +65,7 @@ const emit = defineEmits<{
                 </div>
 
                 <Button
-                    @click="emit('importar', proyecto.id)"
+                    @click="router.visit(`/mapa-editor/${props.proyecto.id}`)"
                     class="flex w-full items-center justify-center gap-2 sm:w-auto"
                 >
                     <svg
@@ -76,15 +74,16 @@ const emit = defineEmits<{
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        stroke-width="2"
                     >
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
                         />
                     </svg>
-                    Importar GeoJSON
+
+                    Dibujar mapa
                 </Button>
             </div>
         </CardHeader>

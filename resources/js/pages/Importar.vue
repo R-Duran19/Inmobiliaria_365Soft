@@ -63,14 +63,7 @@ const irAImportar = (proyectoId: number) => {
                 </p>
               </div>
             </div>
-            <!-- NUEVO BOTÓN -->
-    <button
-      @click="router.visit('/mapa-editor')"
-      class="flex-shrink-0 px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold rounded-xl shadow-lg transition-all duration-200 hover:scale-105 flex items-center gap-2"
-    >
-      <i class="pi pi-pencil"></i>
-      <span>Editor de Mapas</span>
-    </button>
+   
           </div>
         </div>
       </div>
