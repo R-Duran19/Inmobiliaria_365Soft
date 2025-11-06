@@ -47,7 +47,7 @@ class BarrioController extends Controller
     public function getBarriosPorProyecto($idproyecto)
     {
         $barrios = Barrio::where('idproyecto', $idproyecto)
-            ->select('id', 'nombre')
+            ->select('id', 'nombre', 'poligono')
             ->get();
 
         return response()->json([
