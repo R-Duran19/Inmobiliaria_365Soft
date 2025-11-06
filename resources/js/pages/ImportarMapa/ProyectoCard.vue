@@ -87,8 +87,7 @@ const emit = defineEmits<{
                 </Button>
                 <Button
                     @click="router.visit(`/editar-mapa-seleccionado/${props.proyecto.id}`)"
-                    class="flex w-full items-center justify-center gap-2 bg-gray-800
-                    text-color-white border border-white hover:bg-gray-600 sm:w-auto"
+                    class="flex w-full items-center justify-center gap-2 border border-green-400 bg-white dark:bg-gray-800 hover:bg-gray-100 text-color-white dark:border-white dark:hover:bg-gray-600 sm:w-auto"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
