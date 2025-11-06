@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+
+use Inertia\Inertia;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +19,8 @@ use MatanYadaev\EloquentSpatial\Objects\Point;
 use MatanYadaev\EloquentSpatial\Objects\LineString;
 use MatanYadaev\EloquentSpatial\Objects\Polygon;
 
+
+
 class PolygonEditorController extends Controller
 {
     /**
@@ -24,6 +30,13 @@ class PolygonEditorController extends Controller
     public function index(Request $request)
     {
         return inertia('MapaEditor/Index');
+    }
+    
+    public function editarMapa($proyecto)
+    {
+        return inertia('MapaEditor/editMapa', [
+            'selectedProyectoId' => $proyecto
+        ]);
     }
 
     public function irIndex($proyecto)
@@ -197,9 +210,8 @@ Log::error('❌ Error guardando polígonos', [
     'trace' => $e->getTraceAsString(),
 ]);
 
-return redirect()->back()->withErrors([
-    'message' => 'Error al guardar polígonos: ' . $e->getMessage(),
-]);
+
+
     }
 }
 
@@ -437,18 +449,21 @@ public function getPoligonos($idProyecto)
         'data' => [
             'barrios' => $barrios->map(function ($barrio) {
                 return [
+                    'id' => $barrio->id,
                     'nombre' => $barrio->nombre,
                     'geometry' => $barrio->poligono, // Usa el accessor
                 ];
             }),
             'cuadras' => $cuadras->map(function ($cuadra) {
                 return [
+                    'id' => $cuadra->id,
                     'nombre' => $cuadra->nombre,
                     'geometry' => $cuadra->poligono, // Usa el accessor
                 ];
             }),
             'terrenos' => $terrenos->map(function ($terreno) {
                 return [
+                    'id' => $terreno->id,
                     'numero' => $terreno->numero_terreno,
                     'geometry' => $terreno->poligono, // Usa el accessor
                 ];
@@ -456,6 +471,76 @@ public function getPoligonos($idProyecto)
         ],
     ]);
 }
+
+
+    public function updatePoligono(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'tipo' => 'required|in:barrio,cuadra,terreno',
+            'id' => 'required|integer',
+            'poligono' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $modelo = null;
+            switch ($request->input('tipo')) {
+                case 'barrio':
+                    $modelo = Barrio::find($request->id);
+                    break;
+                case 'cuadra':
+                    $modelo = Cuadra::where('id', $request->id)
+                                    ->whereNotNull('idbarrio')
+                                    ->first();
+                    break;
+                case 'terreno':
+                    $modelo = Terreno::find($request->id);
+                    break;
+            }
+
+            if (!$modelo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "No se encontró el {$request->tipo} con ID {$request->id}."
+                ], 404);
+            }
+
+            $coordinates = $request->poligono['coordinates'][0]; // Primer anillo del polígono
+
+            $lineString = new LineString(
+                array_map(function ($coordinate) {
+                    // El orden correcto para Point es (latitud, longitud)
+                    return new Point($coordinate[1], $coordinate[0]);
+                },  $coordinates)
+            );
+
+            $polygon = new Polygon([$lineString]);
+
+            $modelo->poligono = $polygon;
+            $modelo->save();
+
+            $modelo->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Polígono actualizado correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el polígono: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 
 
 
