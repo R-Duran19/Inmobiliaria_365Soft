@@ -11,6 +11,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 
 import { Head, router } from '@inertiajs/vue3';
 
+import Loading from '@/components/ui/Loading/Loading.vue';
 import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
 import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
@@ -73,6 +74,12 @@ interface PoligonoGuardado {
     layer?: any;
 }
 
+interface Poligono {
+    geometry: any;
+}
+
+const poligono = ref<Poligono>();
+
 // Breadcrumbs
 
 // Estado
@@ -85,7 +92,7 @@ const categorias = ref<Categoria[]>([]);
 
 // Formulario
 const selectedProyecto = ref<number | null>(null);
-const tipoPoligono = ref<'barrio' | 'cuadra' | 'terreno' | ''>('');
+const tipoPoligono = ref<'barrio' | 'cuadra' | 'terreno' | 'proyecto' | ''>('');
 const selectedBarrio = ref<number | null>(null);
 const selectedCuadra = ref<number | null>(null);
 const selectedCategoria = ref<number | null>(null);
@@ -248,6 +255,9 @@ const guardarPoligono = () => {
         });
         return;
     }
+    const token = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content');
 
     const error = validarFormulario();
     if (error) {
@@ -264,7 +274,10 @@ const guardarPoligono = () => {
 
     let properties: any = { tipo: tipoPoligono.value };
 
-    if (tipoPoligono.value === 'barrio') {
+    // Preparar propiedades según tipo
+    if (tipoPoligono.value === 'proyecto') {
+        properties.idproyecto = selectedProyecto.value;}
+    else if (tipoPoligono.value === 'barrio') {
         const barrioSeleccionado = barrios.value.find(
             (b) => b.id === selectedBarrio.value,
         );
@@ -294,6 +307,67 @@ const guardarPoligono = () => {
     };
 
     poligonosGuardados.value.push(poligono);
+    if (tipoPoligono.value === 'proyecto') {
+    // Guardar directamente el polígono del proyecto
+    const geojson = (currentLayer as any).toGeoJSON();
+
+    const payload = {
+        poligono: geojson.geometry,
+    };
+
+    saving.value = true;
+
+    fetch(`/proyectos/poligono/${selectedProyecto.value}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token || '',
+        },
+        body: JSON.stringify(payload),
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.success) {
+                toast.add({
+                    severity: 'success',
+                    summary: 'Éxito',
+                    detail: 'Polígono del proyecto guardado correctamente',
+                    life: 3000,
+                });
+
+                // Colorear el polígono en el mapa
+                (currentLayer as any).setStyle({
+                    color: '#22c55e',
+                    fillColor: '#22c55e',
+                    fillOpacity: 0.4,
+                });
+
+                currentLayer = null;
+            } else {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: data.message || 'No se pudo guardar el polígono',
+                    life: 3000,
+                });
+            }
+        })
+        .catch((err) => {
+            console.error('Error al guardar polígono de proyecto:', err);
+            toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Fallo en la conexión con el servidor',
+                life: 3000,
+            });
+        })
+        .finally(() => {
+            saving.value = false;
+        });
+
+    return; // detener ejecución, no lo agregamos a la lista local
+}
+
 
     // Cambiar color según tipo
     (currentLayer as any).setStyle({
@@ -368,7 +442,7 @@ const guardarTodo = () => {
         {
             preserveScroll: true,
             onSuccess: (page: any) => {
-               console.log('Estructura completa de page.props:', page.props);
+                console.log('Estructura completa de page.props:', page.props);
                 // Inertia pone los datos directamente en props
                 const success = page.props.flash?.success;
                 const message = page.props.flash?.message;
@@ -377,8 +451,6 @@ const guardarTodo = () => {
                 mostrarNotificacion('success', 'Polígonos Guardados.');
                 if (success) {
                     const mensaje = `Barrios: ${resultado?.barrios?.creados || 0} creados, ${resultado?.barrios?.actualizados || 0} actualizados | Cuadras: ${resultado?.cuadras?.creadas || 0} creadas, ${resultado?.cuadras?.actualizadas || 0} actualizadas | Terrenos: ${resultado?.terrenos?.creados || 0} creados, ${resultado?.terrenos?.actualizados || 0} actualizados`;
-
-                    
 
                     // Limpiar todo
                     poligonosGuardados.value = [];
@@ -392,9 +464,8 @@ const guardarTodo = () => {
                             }
                         });
                     }
-                }
-                else{
-                  //  mostrarNotificacion('success', 'Polígonos Guardados.');
+                } else {
+                    //  mostrarNotificacion('success', 'Polígonos Guardados.');
                 }
             },
             onError: (errors: any) => {
@@ -532,12 +603,27 @@ const cargarPoligonosGuardados = async (idProyecto: number) => {
     }
 };
 
+async function getPoligono(idProyecto: number) {
+    try {
+        const response = await fetch(`/proyectos/poligono/${idProyecto}`);
+        const data = await response.json();
+        poligono.value = data;
+        console.log('poli ', poligono.value);
+    } catch (error) {
+        console.error('Error cargando datos:', error);
+    } finally {
+        loading.value = false;
+    }
+}
+
 onMounted(async () => {
     cargarDatosIniciales();
+
     initMap();
     if (props.selectedProyectoId) {
         selectedProyecto.value = Number(props.selectedProyectoId);
         await cargarPoligonosGuardados(selectedProyecto.value);
+        await getPoligono(selectedProyecto.value);
     }
 });
 </script>
@@ -623,6 +709,15 @@ onMounted(async () => {
                             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         >
                             <option value="">-- Seleccionar --</option>
+                            <option
+                                v-if="
+                                    poligono && Object.keys(poligono).length <= 0
+                                "
+                                value="proyecto"
+                            >
+                                Proyecto
+                            </option>
+
                             <option value="barrio">🏘️ Barrio</option>
                             <option value="cuadra">🏗️ Cuadra</option>
                             <option value="terreno">🏠 Terreno</option>
@@ -878,7 +973,9 @@ onMounted(async () => {
 
                 <!-- Mapa -->
                 <div class="relative flex-1">
-                    <div id="map" class="h-full w-full"></div>
+                    <div id="map" class="h-full w-full">
+                        <Loading v-if="loading"></Loading>
+                    </div>
                 </div>
             </div>
         </div>
