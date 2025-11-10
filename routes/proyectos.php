@@ -20,6 +20,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::patch('/{proyecto}/desactivar', [ProyectoController::class, 'desactivar'])->name('desactivar');
         Route::patch('/{proyecto}/activar', [ProyectoController::class, 'activar'])->name('activar');
         Route::get('/ultimoId', [ProyectoController::class, 'getUltimoId']);
+        Route::post('/poligono/{idproyecto}', [ProyectoController::class, 'postPoligono']);
+        Route::get('/poligono/{idproyecto}', [ProyectoController::class, 'getPoligono']);
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])
