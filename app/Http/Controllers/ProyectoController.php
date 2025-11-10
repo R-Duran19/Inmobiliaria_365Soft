@@ -15,6 +15,12 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use Illuminate\Support\Facades\Log;
 
+use Illuminate\Support\Facades\Validator;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
+use MatanYadaev\EloquentSpatial\Objects\LineString;
+
+use MatanYadaev\EloquentSpatial\Objects\Point;
+
 class ProyectoController extends Controller
 {
     public function index(Request $request)
@@ -323,5 +329,66 @@ class ProyectoController extends Controller
             'UltimoProyecto' => $proyecto ? $proyecto->id : null,
         ]);
     }
+
+    public function postPoligono(Request $request, $idProyecto)
+    {
+        $validator = Validator::make($request->all(), [
+            'poligono' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $proyecto = Proyecto::find($idProyecto);
+
+            // Convertir coordenadas en LineString para luego pasarlo a Polygon
+            $coordinates = $request->poligono['coordinates'][0]; // exterior ring
+            $points = [];
+            foreach ($coordinates as $coord) {
+                // Asegurarse que los índices existen y son numéricos
+                if (is_array($coord) && count($coord) === 2) {
+                    $points[] = new \MatanYadaev\EloquentSpatial\Objects\Point(
+                        floatval($coord[1]), // lat
+                        floatval($coord[0])  // lng
+                    );
+                }
+            }
+
+            $lineString = new LineString($points);
+            $polygon = new Polygon([$lineString]);
+
+
+            $polygon = new Polygon([$lineString]);
+
+            $proyecto->poligono = $polygon;
+            $proyecto->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Polígono del proyecto guardado correctamente',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el polígono: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getPoligono($idProyecto)
+{
+    $proyecto = Proyecto::find($idProyecto);
+    $poligono = $proyecto ? $proyecto->poligono : null;
+
+    return response()->json($poligono);
+}
+
+
 
 }
