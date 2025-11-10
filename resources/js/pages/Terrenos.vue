@@ -2,15 +2,15 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { terrenos as terrenosRoute } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { computed, reactive, ref, onMounted } from 'vue';
 import axios from 'axios';
+import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Terreno } from '@/types/terrenos';
-import TerrenosHeader from './Terrenos/TerrenosHeader.vue';
-import TerrenosTable from '@/pages/Terrenos/TablaTerrenos/TerrenosTable.vue';
 import ConfirmacionModal from '@/components/ui/confirmacionModal/ConfirmacionModal.vue';
 import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
+import TerrenosTable from '@/pages/Terrenos/TablaTerrenos/TerrenosTable.vue';
+import { Terreno } from '@/types/terrenos';
 import CostosDrawer from './Terrenos/CostosDrawer.vue';
+import TerrenosHeader from './Terrenos/TerrenosHeader.vue';
 
 interface Proyecto {
     id: number;
@@ -40,7 +40,9 @@ const proyectos = ref<Proyecto[]>([]);
 const props = defineProps<{ terrenos: Terreno[] }>();
 const terrenos = ref([...props.terrenos]);
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Terrenos', href: terrenosRoute().url }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Terrenos', href: terrenosRoute().url },
+];
 
 const search = reactive({ ubicacion: '', nombreCuadra: '', nombreBarrio: '' });
 const notificacion = reactive({
@@ -56,7 +58,7 @@ const estadoDialogos = reactive({
     idTerrenoAEliminar: null as number | null,
     costosDialogVisible: false,
     selectedTerreno: null as Terreno | null,
-    nuevoTerrenoVisible: false
+    nuevoTerrenoVisible: false,
 });
 
 // 👇 Nueva variable para controlar la vista
@@ -78,9 +80,12 @@ onMounted(() => {
 
 function seleccionarProyecto(id: number) {
     form.idproyecto = id;
-    const proyecto = proyectos.value.find(p => p.id === id);
+    const proyecto = proyectos.value.find((p) => p.id === id);
     mostrandoTerrenos.value = true; // 👈 Ocultar lista de proyectos y mostrar terrenos
-    mostrarNotificacion('success', `Proyecto seleccionado: ${proyecto?.nombre}`);
+    mostrarNotificacion(
+        'success',
+        `Proyecto seleccionado: ${proyecto?.nombre}`,
+    );
 }
 
 function volverAProyectos() {
@@ -108,21 +113,25 @@ function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
 
 const filteredTerrenos = computed(() =>
     terrenos.value.filter((t) => {
-        const matchProyectoId = !form.idproyecto || t.idproyecto === form.idproyecto;
+        const matchProyectoId =
+            !form.idproyecto || t.idproyecto === form.idproyecto;
         const ubicacion = (t.ubicacion ?? '').toLowerCase();
         const filterUbicacion = (search.ubicacion ?? '').toLowerCase().trim();
-        const matchUbicacion = !filterUbicacion || ubicacion.includes(filterUbicacion);
+        const matchUbicacion =
+            !filterUbicacion || ubicacion.includes(filterUbicacion);
 
         const nombreBarrio = (t.cuadra?.barrio?.nombre ?? '').toLowerCase();
         const filterBarrio = (search.nombreBarrio ?? '').toLowerCase().trim();
-        const matchBarrio = !filterBarrio || nombreBarrio.includes(filterBarrio);
+        const matchBarrio =
+            !filterBarrio || nombreBarrio.includes(filterBarrio);
 
         const nombreCuadra = (t.cuadra?.nombre ?? '').toLowerCase();
         const filterCuadra = (search.nombreCuadra ?? '').toLowerCase().trim();
-        const matchCuadra = !filterCuadra || nombreCuadra.includes(filterCuadra);
+        const matchCuadra =
+            !filterCuadra || nombreCuadra.includes(filterCuadra);
 
         return matchProyectoId && matchUbicacion && matchBarrio && matchCuadra;
-    })
+    }),
 );
 
 function pedirConfirmacionEliminar(id: number) {
@@ -168,33 +177,53 @@ function mostrarTerrenos() {
     <AppLayout :breadcrumbs="breadcrumbs">
         <!-- 🔹 Mostrar PROYECTOS -->
         <div v-if="!mostrandoTerrenos" class="mb-6 p-4">
-            <h2 class="text-xl font-semibold mb-3 dark:text-white">Proyectos Disponibles</h2>
-            <div class="flex flex-col rounded-lg shadow-md bg-white dark:bg-gray-800">
+            <h2 class="mb-3 text-xl font-semibold dark:text-white">
+                Proyectos Disponibles
+            </h2>
+            <div
+                class="flex flex-col rounded-lg bg-white shadow-md dark:bg-gray-800"
+            >
                 <div
                     v-for="(p, index) in proyectos"
                     :key="p.id"
                     @click="seleccionarProyecto(p.id)"
-                    class="flex items-center p-4 sm:p-5 gap-4 cursor-pointer transition-colors duration-150"
+                    class="flex cursor-pointer items-center gap-4 p-4 transition-colors duration-150 sm:p-5"
                     :class="{
-                        'border-t border-gray-200 dark:border-gray-700': index !== 0,
-                        'bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-600': form.idproyecto === p.id,
-                        'hover:bg-gray-50 dark:hover:bg-gray-700': form.idproyecto !== p.id
+                        'border-t border-gray-200 dark:border-gray-700':
+                            index !== 0,
+                        'border-l-4 border-blue-600 bg-blue-50 dark:bg-blue-900':
+                            form.idproyecto === p.id,
+                        'hover:bg-gray-50 dark:hover:bg-gray-700':
+                            form.idproyecto !== p.id,
                     }"
                 >
-                    <div class="w-12 h-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-700 flex items-center justify-center">
-                        <i class="pi pi-briefcase text-blue-600 dark:text-blue-100 text-xl"></i>
+                    <div
+                        class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-700"
+                    >
+                        <i
+                            class="pi pi-briefcase text-xl text-blue-600 dark:text-blue-100"
+                        ></i>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-lg font-bold truncate text-gray-900 dark:text-white mt-0.5">
+                    <div class="min-w-0 flex-1">
+                        <div
+                            class="mt-0.5 truncate text-lg font-bold text-gray-900 dark:text-white"
+                        >
                             {{ p.nombre }}
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <i v-if="form.idproyecto === p.id" class="pi pi-check-circle text-green-600 text-2xl" title="Proyecto Seleccionado"></i>
+                        <i
+                            v-if="form.idproyecto === p.id"
+                            class="pi pi-check-circle text-2xl text-green-600"
+                            title="Proyecto Seleccionado"
+                        ></i>
                     </div>
                 </div>
 
-                <div v-if="proyectos.length === 0" class="p-6 text-center text-gray-500 dark:text-gray-400">
+                <div
+                    v-if="proyectos.length === 0"
+                    class="p-6 text-center text-gray-500 dark:text-gray-400"
+                >
                     No hay proyectos cargados.
                 </div>
             </div>
@@ -202,13 +231,15 @@ function mostrarTerrenos() {
 
         <!-- 🔹 Mostrar TERRENOS del proyecto seleccionado -->
         <div v-else class="py-6">
-            <div class="flex items-center justify-between mb-4 gap-1">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white ml-6">
+            <div class="mb-4 flex items-center justify-between gap-1">
+                <h2
+                    class="ml-6 text-xl font-semibold text-gray-900 dark:text-white"
+                >
                     Terrenos del Proyecto Seleccionado
                 </h2>
                 <button
                     @click="volverAProyectos"
-                    class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition mr-6"
+                    class="mr-6 rounded-lg bg-gray-200 px-3 py-1.5 text-gray-800 transition hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
                 >
                     ← Volver a Proyectos
                 </button>
