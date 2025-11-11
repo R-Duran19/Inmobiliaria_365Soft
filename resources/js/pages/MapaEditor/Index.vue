@@ -618,14 +618,48 @@ async function getPoligono(idProyecto: number) {
 
 onMounted(async () => {
     cargarDatosIniciales();
-
     initMap();
+
+    
+
     if (props.selectedProyectoId) {
         selectedProyecto.value = Number(props.selectedProyectoId);
+
         await cargarPoligonosGuardados(selectedProyecto.value);
         await getPoligono(selectedProyecto.value);
+
+        // 🔥 Aquí el nuevo comportamiento de delimitación:
+        if (poligono.value && map) {
+            const poligonoGeoJSON =
+                typeof poligono.value === 'string'
+                    ? JSON.parse(poligono.value)
+                    : poligono.value;
+
+            const proyectoLayer = L.geoJSON(poligonoGeoJSON);
+            const bounds = proyectoLayer.getBounds();
+
+            if (bounds.isValid()) {
+                map.flyToBounds(bounds, {
+                    padding: [50, 50],
+                    duration: 1.5,
+                    easeLinearity: 0.25,
+                });
+
+                setTimeout(() => {
+                    if (map) {
+                        map.setMaxBounds(bounds.pad(0.1));
+                        map.setZoom(13);
+                    }
+                }, 1600);
+            }
+        }
     }
 });
+
+
+
+
+
 </script>
 <template>
     <AppLayout>
