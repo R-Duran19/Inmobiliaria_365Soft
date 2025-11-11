@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import { useForm } from '@inertiajs/vue3';
-
+import L from 'leaflet';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -14,6 +13,16 @@ import { onMounted, ref } from 'vue';
 interface Proyecto {
     id: number;
     nombre: string;
+    descripcion: string;
+    ubicacion: string;
+    fecha_lanzamiento: string;
+    numero_lotes: number;
+    fotografia: string | null;
+    total_terrenos: number;
+    terrenos_disponibles: number;
+    terrenos_vendidos: number;
+    terrenos_reservados: number;
+    poligono?: any;
 }
 
 declare module 'leaflet' {
@@ -42,6 +51,7 @@ interface Terreno {
     numero?: string;
     geometry?: any;
     idcuadra: number;
+    nombre: string;
     numero_terreno: number;
 }
 
@@ -85,7 +95,6 @@ const mostrarPoligonosFiltrados = async ({
 }) => {
     if (!map) return;
 
-    
     map.eachLayer((layer) => {
         if (!(layer instanceof L.TileLayer)) map!.removeLayer(layer);
     });
@@ -166,7 +175,6 @@ const mostrarPoligonosFiltrados = async ({
             }
         }
 
-        
         const group = L.featureGroup();
         seleccionados.forEach((item) => {
             const layer = L.geoJSON(item.geometry, {
@@ -219,18 +227,16 @@ const mostrarPoligonosFiltrados = async ({
 };
 
 const seleccionarBarrio = async (barrioId: number) => {
-    
     if (barrioSeleccionado.value === barrioId) {
         barrioSeleccionado.value = null;
         cuadraSeleccionada.value = null;
         terrenoSeleccionado.value = null;
         cuadras.value = [];
         terrenos.value = [];
-        await cargarPoligonosGuardados(Number(props.selectedProyectoId)); 
+        await cargarPoligonosGuardados(Number(props.selectedProyectoId));
         return;
     }
 
-    
     barrioSeleccionado.value = barrioId;
     cuadraSeleccionada.value = null;
     terrenoSeleccionado.value = null;
@@ -247,7 +253,6 @@ const seleccionarBarrio = async (barrioId: number) => {
 };
 
 const seleccionarCuadra = async (cuadraId: number) => {
-    
     if (cuadraSeleccionada.value === cuadraId) {
         cuadraSeleccionada.value = null;
         terrenoSeleccionado.value = null;
@@ -267,7 +272,6 @@ const seleccionarCuadra = async (cuadraId: number) => {
 };
 
 const seleccionarTerreno = async (terrenoID: number) => {
-    
     if (terrenoSeleccionado.value === terrenoID) {
         terrenoSeleccionado.value = null;
         await cargarPoligonosGuardados(Number(props.selectedProyectoId));
@@ -367,7 +371,7 @@ const cargarPoligonosGuardados = async (idProyecto: number) => {
                         if (btn) {
                             btn.addEventListener('click', () => {
                                 activarEdicion(e.target, item);
-                                e.target.closePopup(); 
+                                e.target.closePopup();
                             });
                         }
                     }, 100);
@@ -506,17 +510,124 @@ async function guardarCambios() {
 }
 
 onMounted(async () => {
-    initMap();
     const idProyecto = Number(props.selectedProyectoId);
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) return;
 
-    await getBarrios(idProyecto);
-    await getTerrenos(idProyecto);
+    // Evitar duplicación si el mapa ya está montado
+    if (map) {
+        map.remove();
+        map = null;
+    }
 
+    // Crear mapa centrado en Bolivia
+    map = L.map(mapContainer).setView([-17.3895, -66.3167], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 22,
+        maxNativeZoom: 19,
+    }).addTo(map);
+
+    // Cargar datos en paralelo
+    await Promise.all([
+        getBarrios(idProyecto),
+        getTerrenos(idProyecto),
+        cargarPoligonosGuardados(idProyecto),
+    ]);
+
+    // Cargar las cuadras de todos los barrios (de forma secuencial)
     for (const b of barrios.value) {
         await getCuadras(b.id);
     }
 
-    await cargarPoligonosGuardados(idProyecto);
+    // ==============================
+    // CENTRAR MAPA SEGÚN DATOS
+    // ==============================
+
+    // Intentar primero con terrenos
+    // --- Intentar primero con terrenos ---
+    const geojsonTerrenos: GeoJSON.Feature[] = terrenos.value
+        .filter((t) => t.geometry)
+        .map((t) => ({
+            type: 'Feature' as const,
+            geometry: t.geometry as GeoJSON.Geometry,
+            properties: {
+                id: t.id,
+                nombre: t.nombre ?? '',
+                idcuadra: t.idcuadra,
+                numero_terreno: t.numero_terreno,
+            },
+        }));
+
+    if (geojsonTerrenos.length > 0) {
+        const featureCollection: GeoJSON.FeatureCollection = {
+            type: 'FeatureCollection',
+            features: geojsonTerrenos,
+        };
+
+        const layerTerrenos = L.geoJSON(featureCollection);
+        const bounds = layerTerrenos.getBounds();
+        if (bounds.isValid()) {
+            map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+        }
+    }
+    // --- Si no hay terrenos, probar con cuadras ---
+    else if (cuadras.value.some((c) => c.geometry)) {
+        const geojsonCuadras: GeoJSON.Feature[] = cuadras.value
+            .filter((c) => c.geometry)
+            .map((c) => ({
+                type: 'Feature' as const,
+                geometry: c.geometry as GeoJSON.Geometry,
+                properties: { id: c.id, nombre: c.nombre ?? '' },
+            }));
+
+        const featureCollection: GeoJSON.FeatureCollection = {
+            type: 'FeatureCollection',
+            features: geojsonCuadras,
+        };
+
+        const layerCuadras = L.geoJSON(featureCollection);
+        const bounds = layerCuadras.getBounds();
+        if (bounds.isValid()) {
+            map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+        }
+    }
+    // --- Si tampoco hay cuadras, probar con barrios ---
+    else if (barrios.value.some((b) => b.geometry)) {
+        const geojsonBarrios: GeoJSON.Feature[] = barrios.value
+            .filter((b) => b.geometry)
+            .map((b) => ({
+                type: 'Feature' as const,
+                geometry: b.geometry as GeoJSON.Geometry,
+                properties: { id: b.id, nombre: b.nombre ?? '' },
+            }));
+
+        const featureCollection: GeoJSON.FeatureCollection = {
+            type: 'FeatureCollection',
+            features: geojsonBarrios,
+        };
+
+        const layerBarrios = L.geoJSON(featureCollection);
+        const bounds = layerBarrios.getBounds();
+        if (bounds.isValid()) {
+            map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+        }
+    }
+
+    // ==============================
+    // CONTROL DE ZOOM Y LÍMITES
+    // ==============================
+    map.on('zoomend', () => {
+        console.log('Zoom actual:', map?.getZoom());
+    });
+
+    // Establecer límites del mapa ligeramente ampliados
+    setTimeout(() => {
+        const currentBounds = map?.getBounds();
+        if (currentBounds && currentBounds.isValid()) {
+            map!.setMaxBounds(currentBounds.pad(0.1));
+        }
+    }, 1800);
 });
 </script>
 
@@ -574,7 +685,6 @@ onMounted(async () => {
                     </details>
 
                     <details
-                        
                         class="mb-4 rounded-lg border p-3 dark:border-gray-700"
                     >
                         <summary
@@ -599,10 +709,7 @@ onMounted(async () => {
                         </ul>
                     </details>
 
-                    <details
-                        
-                        class="rounded-lg border p-3 dark:border-gray-700"
-                    >
+                    <details class="rounded-lg border p-3 dark:border-gray-700">
                         <summary
                             class="flex cursor-pointer items-center justify-between font-bold text-amber-400"
                         >
