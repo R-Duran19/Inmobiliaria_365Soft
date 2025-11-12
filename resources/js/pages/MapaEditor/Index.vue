@@ -39,7 +39,7 @@ function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
     notificacion.visible = true;
 }
 
-// Tipos
+
 interface BreadcrumbItem {
     title: string;
     href: string;
@@ -79,10 +79,11 @@ interface Poligono {
 }
 
 const poligono = ref<Poligono>();
+const currentZoomLevel = ref<'barrios' | 'cuadras' | 'terrenos'>('barrios');
 
-// Breadcrumbs
 
-// Estado
+
+
 const loading = ref(false);
 const saving = ref(false);
 const proyectos = ref<Proyecto[]>([]);
@@ -90,28 +91,28 @@ const barrios = ref<Barrio[]>([]);
 const cuadras = ref<Cuadra[]>([]);
 const categorias = ref<Categoria[]>([]);
 
-// Formulario
+
 const selectedProyecto = ref<number | null>(null);
 const tipoPoligono = ref<'barrio' | 'cuadra' | 'terreno' | 'proyecto' | ''>('');
 const selectedBarrio = ref<number | null>(null);
 const selectedCuadra = ref<number | null>(null);
 const selectedCategoria = ref<number | null>(null);
 
-// Campos dinámicos (ya no se usan para barrio/cuadra, solo terreno)
+
 const numeroTerreno = ref('');
 const superficieTerreno = ref('');
 
-// Para terreno, necesitamos seleccionar barrio y cuadra
+
 const selectedBarrioForTerreno = ref<number | null>(null);
 const selectedCuadraForTerreno = ref<number | null>(null);
 const cuadrasForTerreno = ref<Cuadra[]>([]);
 
-// Mapa
+
 let map: L.Map | null = null;
 let currentLayer: L.Layer | null = null;
 const poligonosGuardados = ref<PoligonoGuardado[]>([]);
 
-// Computadas
+
 const categoriasDelProyecto = computed(() => {
     if (!selectedProyecto.value) return [];
     return categorias.value.filter(
@@ -123,7 +124,7 @@ const puedeGuardar = computed(() => {
     return poligonosGuardados.value.length > 0;
 });
 
-// Watchers
+
 watch(selectedProyecto, async (newVal) => {
     if (newVal) {
         await cargarBarrios(newVal);
@@ -148,13 +149,13 @@ watch(selectedBarrioForTerreno, async (newVal) => {
 
 watch(tipoPoligono, () => {
     limpiarCampos();
-    // Limpiar también las variables de terreno
+    
     selectedBarrioForTerreno.value = null;
     selectedCuadraForTerreno.value = null;
     cuadrasForTerreno.value = [];
 });
 
-// Métodos
+
 const cargarDatosIniciales = async () => {
     loading.value = true;
     try {
@@ -217,9 +218,9 @@ const cargarCuadrasForTerreno = async (idBarrio: number) => {
 const limpiarCampos = () => {
     superficieTerreno.value = '';
     selectedCategoria.value = null;
-    // selectedBarrioForTerreno.value = null;
-    // selectedCuadraForTerreno.value = null;
-    // cuadrasForTerreno.value = [];
+    
+    
+    
 };
 
 const validarFormulario = (): string | null => {
@@ -256,8 +257,8 @@ const guardarPoligono = () => {
         return;
     }
     const token = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute('content');
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
 
     const error = validarFormulario();
     if (error) {
@@ -274,10 +275,10 @@ const guardarPoligono = () => {
 
     let properties: any = { tipo: tipoPoligono.value };
 
-    // Preparar propiedades según tipo
+    
     if (tipoPoligono.value === 'proyecto') {
-        properties.idproyecto = selectedProyecto.value;}
-    else if (tipoPoligono.value === 'barrio') {
+        properties.idproyecto = selectedProyecto.value;
+    } else if (tipoPoligono.value === 'barrio') {
         const barrioSeleccionado = barrios.value.find(
             (b) => b.id === selectedBarrio.value,
         );
@@ -308,82 +309,91 @@ const guardarPoligono = () => {
 
     poligonosGuardados.value.push(poligono);
     if (tipoPoligono.value === 'proyecto') {
-    // Guardar directamente el polígono del proyecto
-    const geojson = (currentLayer as any).toGeoJSON();
+        
+        const geojson = (currentLayer as any).toGeoJSON();
 
-    const payload = {
-        poligono: geojson.geometry,
-    };
+        const payload = {
+            poligono: geojson.geometry,
+        };
 
-    saving.value = true;
+        saving.value = true;
 
-    fetch(`/proyectos/poligono/${selectedProyecto.value}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': token || '',
-        },
-        body: JSON.stringify(payload),
-    })
-        .then((res) => res.json())
-        .then((data) => {
-            if (data.success) {
-                toast.add({
-                    severity: 'success',
-                    summary: 'Éxito',
-                    detail: 'Polígono del proyecto guardado correctamente',
-                    life: 3000,
-                });
+        fetch(`/proyectos/poligono/${selectedProyecto.value}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token || '',
+            },
+            body: JSON.stringify(payload),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success) {
+                    toast.add({
+                        severity: 'success',
+                        summary: 'Éxito',
+                        detail: 'Polígono del proyecto guardado correctamente',
+                        life: 3000,
+                    });
 
-                // Colorear el polígono en el mapa
-                (currentLayer as any).setStyle({
-                    color: '#22c55e',
-                    fillColor: '#22c55e',
-                    fillOpacity: 0.4,
-                });
+                    
+                    (currentLayer as any).setStyle({
+                        color: '#22c55e',
+                        fillColor: '#22c55e',
+                        fillOpacity: 0.4,
+                    });
 
-                currentLayer = null;
-            } else {
+                    currentLayer = null;
+                } else {
+                    toast.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail:
+                            data.message || 'No se pudo guardar el polígono',
+                        life: 3000,
+                    });
+                }
+            })
+            .catch((err) => {
+                console.error('Error al guardar polígono de proyecto:', err);
                 toast.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: data.message || 'No se pudo guardar el polígono',
+                    detail: 'Fallo en la conexión con el servidor',
                     life: 3000,
                 });
-            }
-        })
-        .catch((err) => {
-            console.error('Error al guardar polígono de proyecto:', err);
-            toast.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Fallo en la conexión con el servidor',
-                life: 3000,
+            })
+            .finally(() => {
+                saving.value = false;
             });
-        })
-        .finally(() => {
-            saving.value = false;
-        });
 
-    return; // detener ejecución, no lo agregamos a la lista local
-}
+        return; 
+    }
 
-
+    
     // Cambiar color según tipo
-    (currentLayer as any).setStyle({
-        color: getColorByType(tipoPoligono.value),
-        fillColor: getColorByType(tipoPoligono.value),
-        fillOpacity: 0.5,
-        weight: 2,
-    });
+(currentLayer as any).setStyle({
+    color: getColorByType(tipoPoligono.value),
+    fillColor: getColorByType(tipoPoligono.value),
+    fillOpacity: 0.5,
+    weight: 2,
+});
 
-    // Agregar tooltip
-    (currentLayer as any).bindTooltip(
-        properties.nombre || properties.numero || 'Sin nombre',
-        { permanent: true, direction: 'center' },
-    );
+// Agregar tooltip con la clase según el tipo
+(currentLayer as any).bindTooltip(
+    properties.nombre || properties.numero || 'Sin nombre',
+    {
+        permanent: true,
+        direction: 'center',
+        className: `${tipoPoligono.value}-tooltip`,
+    }
+);
 
-    currentLayer = null;
+// Asignar tooltipType
+(currentLayer as any).tooltipType = tipoPoligono.value;
+
+
+  
     limpiarCampos();
 
     toast.add({
@@ -443,7 +453,7 @@ const guardarTodo = () => {
             preserveScroll: true,
             onSuccess: (page: any) => {
                 console.log('Estructura completa de page.props:', page.props);
-                // Inertia pone los datos directamente en props
+                
                 const success = page.props.flash?.success;
                 const message = page.props.flash?.message;
                 const resultado = page.props.flash?.resultado;
@@ -452,7 +462,7 @@ const guardarTodo = () => {
                 if (success) {
                     const mensaje = `Barrios: ${resultado?.barrios?.creados || 0} creados, ${resultado?.barrios?.actualizados || 0} actualizados | Cuadras: ${resultado?.cuadras?.creadas || 0} creadas, ${resultado?.cuadras?.actualizadas || 0} actualizadas | Terrenos: ${resultado?.terrenos?.creados || 0} creados, ${resultado?.terrenos?.actualizados || 0} actualizados`;
 
-                    // Limpiar todo
+                    
                     poligonosGuardados.value = [];
                     if (map) {
                         map.eachLayer((layer) => {
@@ -465,7 +475,7 @@ const guardarTodo = () => {
                         });
                     }
                 } else {
-                    //  mostrarNotificacion('success', 'Polígonos Guardados.');
+                    
                 }
             },
             onError: (errors: any) => {
@@ -527,10 +537,10 @@ const initMap = () => {
 };
 
 const eliminarPendientes = () => {
-    // Borra los polígonos del mapa
-    // Si existen polígonos guardados
+    
+    
     if (poligonosGuardados.value.length > 0) {
-        // Eliminar del mapa cada capa
+        
         poligonosGuardados.value.forEach((p) => {
             if (p.layer && map) {
                 map.removeLayer(p.layer);
@@ -538,7 +548,7 @@ const eliminarPendientes = () => {
         });
     }
 
-    // Limpia la lista interna de polígonos
+    
     poligonosGuardados.value = [];
 
     toast.add({
@@ -548,20 +558,15 @@ const eliminarPendientes = () => {
         life: 3000,
     });
 
-    // Cierra el modal
+    
     estadoDialogos.confirmacionVisible = false;
 };
-
 const cargarPoligonosGuardados = async (idProyecto: number) => {
     try {
         const response = await fetch(`/polygon-editor/poligonos/${idProyecto}`);
         const data = await response.json();
-
         if (data.success && map) {
-            console.log('Mapa:', map);
-
             const { barrios, cuadras, terrenos } = data.data;
-
             const todos = [
                 ...barrios.map((b: any) => ({
                     tipo: 'barrio',
@@ -576,12 +581,9 @@ const cargarPoligonosGuardados = async (idProyecto: number) => {
                 ...terrenos.map((t: any) => ({
                     tipo: 'terreno',
                     geometry: t.geometry,
-                    nombre: `Terreno ${t.numero}`,
+                    nombre: `LT ${t.numero}`,
                 })),
             ];
-
-            console.log('todosjfdsjaf ', todos);
-
             todos.forEach((item) => {
                 const layer = L.geoJSON(item.geometry, {
                     style: {
@@ -591,11 +593,14 @@ const cargarPoligonosGuardados = async (idProyecto: number) => {
                         weight: 2,
                     },
                 }).addTo(map!);
-
-                layer.bindTooltip(item.nombre, {
+                
+                layer.bindTooltip(getTooltipContent(item), {
                     permanent: true,
                     direction: 'center',
+                   className: `${item.tipo}-tooltip`,
                 });
+                
+                (layer as any).tooltipType = item.tipo;
             });
         }
     } catch (error) {
@@ -616,19 +621,82 @@ async function getPoligono(idProyecto: number) {
     }
 }
 
+const getTooltipContent = (item: any) => {
+    if (item.tipo === 'barrio') return `${item.nombre}`;
+    if (item.tipo === 'cuadra') return `${item.nombre}`;
+    if (item.tipo === 'terreno') return `${item.nombre}`;
+    return item.nombre || 'Sin nombre';
+};
+
+
+const actualizarVisibilidadTooltips = (nivel: 'barrios' | 'cuadras' | 'terrenos') => {
+    if (!map) return;
+    map.eachLayer((layer: any) => {
+        if (layer.tooltipType) {
+            // Mostrar todos los tooltips
+            if (layer.getTooltip) {
+                const tooltipElement = layer.getTooltip()?.getElement();
+                if (tooltipElement) {
+                    tooltipElement.style.opacity = '1';
+                }
+            }
+
+            // Ocultar el relleno de los polígonos que no corresponden al nivel actual
+            if (nivel === 'barrios' && layer.tooltipType !== 'barrio') {
+                layer.setStyle({ fillOpacity: 0 });
+            } else if (nivel === 'cuadras' && layer.tooltipType !== 'cuadra') {
+                layer.setStyle({ fillOpacity: 0 });
+            } else if (nivel === 'terrenos' && layer.tooltipType !== 'terreno') {
+                layer.setStyle({ fillOpacity: 0 });
+            } else {
+                // Restaurar el relleno para los polígonos del nivel actual
+                layer.setStyle({ fillOpacity: 0.5 });
+            }
+        }
+    });
+};
+
+
+
 onMounted(async () => {
     cargarDatosIniciales();
     initMap();
-
-    
 
     if (props.selectedProyectoId) {
         selectedProyecto.value = Number(props.selectedProyectoId);
 
         await cargarPoligonosGuardados(selectedProyecto.value);
         await getPoligono(selectedProyecto.value);
+        if (map) {
+            map.on('zoomend', () => {
+                if (!map) return;
+                const zoom = map.getZoom();
+                console.log('🔍 Zoom actual:', zoom);
 
-        // 🔥 Aquí el nuevo comportamiento de delimitación:
+                
+                if (zoom < 14) {
+                    if (currentZoomLevel.value !== 'barrios') {
+                        currentZoomLevel.value = 'barrios';
+                        actualizarVisibilidadTooltips('barrios');
+                    }
+                } else if (zoom >= 14 && zoom < 17) {
+                    if (currentZoomLevel.value !== 'cuadras') {
+                        currentZoomLevel.value = 'cuadras';
+                        actualizarVisibilidadTooltips('cuadras');
+                    }
+                } else {
+                    if (currentZoomLevel.value !== 'terrenos') {
+                        currentZoomLevel.value = 'terrenos';
+                        actualizarVisibilidadTooltips('terrenos');
+                    }
+                }
+            });
+
+            
+            setTimeout(() => map!.fire('zoomend'), 1000);
+        }
+
+        
         if (poligono.value && map) {
             const poligonoGeoJSON =
                 typeof poligono.value === 'string'
@@ -655,11 +723,6 @@ onMounted(async () => {
         }
     }
 });
-
-
-
-
-
 </script>
 <template>
     <AppLayout>
@@ -677,37 +740,20 @@ onMounted(async () => {
                 message="¿Estás seguro de que deseas eliminar TODOS los poligonos creados recientemente?"
                 @confirm="eliminarPendientes"
             />
-            <!-- Header -->
-            <div
-                class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-4 text-white shadow-lg"
-            >
-                <div class="flex items-center gap-4">
-                    <div
-                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm"
-                    >
-                        <i class="pi pi-map text-2xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold">Editor de Mapas</h1>
-                        <p class="text-sm text-purple-100">
-                            Dibuja y asigna polígonos a proyectos
-                        </p>
-                    </div>
-                </div>
-            </div>
+            
 
             <div class="flex flex-1 overflow-hidden">
-                <!-- Panel Lateral -->
+                
                 <div
                     class="w-96 overflow-y-auto border-r border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
                 >
                     <h2
                         class="mb-4 text-lg font-bold text-gray-800 dark:text-white"
                     >
-                        ✏️ Configuración
+                        ✏️ Dibujar Mapas
                     </h2>
 
-                    <!-- Proyecto -->
+                    
                     <div class="mb-4">
                         <label
                             class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300"
@@ -730,7 +776,7 @@ onMounted(async () => {
                         </select>
                     </div>
 
-                    <!-- Tipo -->
+                    
                     <div class="mb-4">
                         <label
                             class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300"
@@ -745,7 +791,8 @@ onMounted(async () => {
                             <option value="">-- Seleccionar --</option>
                             <option
                                 v-if="
-                                    poligono && Object.keys(poligono).length <= 0
+                                    poligono &&
+                                    Object.keys(poligono).length <= 0
                                 "
                                 value="proyecto"
                             >
@@ -758,7 +805,7 @@ onMounted(async () => {
                         </select>
                     </div>
 
-                    <!-- Campos BARRIO -->
+                    
                     <div
                         v-if="tipoPoligono === 'barrio'"
                         class="mb-4 space-y-4"
@@ -790,7 +837,7 @@ onMounted(async () => {
                         </div>
                     </div>
 
-                    <!-- Campos CUADRA -->
+                    
                     <div
                         v-if="tipoPoligono === 'cuadra'"
                         class="mb-4 space-y-4"
@@ -843,7 +890,7 @@ onMounted(async () => {
                         </div>
                     </div>
 
-                    <!-- Campos TERRENO -->
+                    
                     <div
                         v-if="tipoPoligono === 'terreno'"
                         class="mb-4 space-y-4"
@@ -937,7 +984,7 @@ onMounted(async () => {
                         </div>
                     </div>
 
-                    <!-- Botones -->
+                    
                     <div class="space-y-2">
                         <button
                             @click="guardarPoligono"
@@ -954,7 +1001,7 @@ onMounted(async () => {
                         </button>
                     </div>
 
-                    <!-- Lista de polígonos -->
+                    
                     <div class="mt-6">
                         <h3
                             class="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300"
@@ -1005,7 +1052,7 @@ onMounted(async () => {
                     </div>
                 </div>
 
-                <!-- Mapa -->
+                
                 <div class="relative flex-1">
                     <div id="map" class="h-full w-full">
                         <Loading v-if="loading"></Loading>
@@ -1019,5 +1066,33 @@ onMounted(async () => {
 <style scoped>
 #map {
     z-index: 0;
+}
+
+/* Estilos para los tooltips de Leaflet */
+:deep(.leaflet-tooltip) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+    text-shadow:
+        1px 1px 2px rgba(255, 255, 255, 0.9),
+        -1px -1px 2px rgba(255, 255, 255, 0.9),
+        1px -1px 2px rgba(255, 255, 255, 0.9),
+        -1px 1px 2px rgba(255, 255, 255, 0.9);
+    pointer-events: none !important;
+}
+
+/* Tamaño de fuente según el tipo de polígono */
+:deep(.leaflet-tooltip.barrio-tooltip) {
+    font-size: 14px !important;
+}
+
+:deep(.leaflet-tooltip.cuadra-tooltip) {
+    font-size: 12px !important;
+}
+
+:deep(.leaflet-tooltip.terreno-tooltip) {
+    font-size: 11px !important;
 }
 </style>
