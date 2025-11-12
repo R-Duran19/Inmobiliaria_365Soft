@@ -123,6 +123,10 @@ const plazos_descuentos = ref([
     },
 ]);
 
+
+const continuarCompra = ref(false);
+const vendiendo = ref(false);
+const precioVenta = ref(props.terreno.precio_venta*0.5);
 const tipoCompra = ref('En cuotas');
 const cuotaInicial = ref(props.terreno.cuota_inicial);
 const fechaPrimerPago = ref('');
@@ -209,36 +213,33 @@ const formValido = computed(() => {
         fechaPrimerPago.value !== ''
     );
 });
+
+function verificarTipoCompra() {
+    if (tipoCompra.value === 'Pago inmediato') {
+        vendiendo.value = true;
+        plazoSeleccionado.value = ''; 
+        fechaPrimerPago.value = '';   
+        continuarCompra.value = true;
+    } else {
+        vendiendo.value = false;
+        continuarCompra.value = false;
+    }
+}
+
+
+
 </script>
 
 <template>
-    <div
-        :class="[
-            'flex w-full flex-col overflow-x-hidden p-4',
-            // A partir de sm, los div se ponen lado a lado si hay simuladoPlanPagos
-            simuladoPlanPagos ? 'sm:flex-row sm:justify-between sm:gap-6' : '',
-        ]"
-    >
-        <!-- Bloque principal -->
-        <div
-            :class="[
-                'flex w-full flex-col gap-5 sm:px-4',
-                simuladoPlanPagos ? 'sm:w-1/3' : 'sm:w-full',
-            ]"
-        >
-            <!-- Tarjeta de información -->
+    <div class="flex w-full flex-col gap-5 overflow-x-hidden p-4">
+        <div class="flex w-full flex-col gap-2 sm:px-4">
             <div
-                :class="[
-                    'flex flex-col items-start justify-center gap-3 rounded-2xl border-2 border-green-500 p-4 dark:border-green-700 dark:bg-gray-800',
-                    simuladoPlanPagos
-                        ? 'sm:flex-col'
-                        : 'sm:flex-row sm:items-center sm:justify-between',
-                ]"
+                class="flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-green-500 p-4 lg:flex-row lg:items-center dark:border-green-700 dark:bg-gray-800"
             >
                 <div
                     v-for="(item, index) in infoItems"
                     :key="index"
-                    class="flex items-center gap-1 py-3 text-gray-900 dark:text-gray-100"
+                    class="flex flex-col items-start gap-1 py-2 text-gray-900 sm:flex-row sm:items-center dark:text-gray-100"
                 >
                     <i
                         :class="[
@@ -262,56 +263,74 @@ const formValido = computed(() => {
                     "
                     :disabled="!formValido"
                     @click="mostrarTabla"
+                    v-if="!continuarCompra"
                 >
                     <i class="pi pi-money-bill text-white" />
                     <span class="text-white">Simular plan de Pagos</span>
                 </button>
-            </div>
-
-            <div
-                v-if="simuladoPlanPagos"
-                class="rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
-            >
-                <div
-                    v-for="(value, index) in precios"
-                    :key="index"
-                    class="flex items-center justify-between gap-3 border-b border-gray-200 py-3 last:border-b-0 dark:border-gray-700"
+                <button
+                    class="flex w-full items-center justify-center gap-2 rounded-2xl border border-green-700 bg-green-700 hover:bg-green-600 p-3 transition sm:w-auto"
+                    @click=""
+                    v-if="continuarCompra"
                 >
-                    <div class="flex items-center gap-2">
-                        <i
-                            class="pi pi-dollar text-green-600 dark:text-green-400"
-                        />
-                        <span
-                            class="font-medium text-gray-900 dark:text-gray-100"
-                            >{{ value.titulo }}</span
-                        >
-                    </div>
-                    <span
-                        class="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                        >${{ value.precio }}</span
-                    >
-                </div>
+                    <span class="text-white">Siguiente</span>
+                    <i class="pi pi-arrow-right text-white" />
+                </button>
+
+
+                
             </div>
 
-            <!-- Formulario -->
             <div
-                class="w-full rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
+                class="flex flex-col w-full rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
             >
-                <div class="mb-4">
+            <div class="flex gap-4">
+                <div class="flex-1 mb-4">
                     <label
                         class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                         >Tipo de compra</label
                     >
                     <select
+                        v-model="tipoCompra"
                         class="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                        @change="verificarTipoCompra"
                     >
                         <option>En cuotas</option>
-                        <option>Al contado</option>
+                        <option>Pago inmediato</option>
                     </select>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4">
-                    <div>
+                <div v-if="vendiendo" class="flex-1">
+                        <label
+                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >Descuento (%)</label
+                        >
+                        <input
+                            type="number"
+                            :value="'50'"
+                            :disabled="true"
+                            class="w-full rounded-lg border border-gray-300 bg-gray-100 p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100
+                            disabled:opacity-50"
+                        />
+                    </div>
+
+                    <div v-if="vendiendo" class="flex-1">
+                        <label
+                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >Precio de venta</label
+                        >
+                        <input
+                            type="number"
+                            :value="Number(precioVenta).toFixed(2)"
+                            :disabled="true"
+                            class="w-full rounded-lg border border-gray-300 bg-gray-100 p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 disabled:opacity-50"
+                        />
+                    </div>
+            </div>
+                
+
+                <div class="flex flex-col sm:grid sm:grid-cols-4 gap-4">
+                    <div v-if="!vendiendo">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                             >Cuota inicial (USD) *</label
@@ -324,7 +343,7 @@ const formValido = computed(() => {
                         />
                     </div>
 
-                    <div>
+                    <div v-if="!vendiendo">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                             >Plazo (Meses) *</label
@@ -346,7 +365,7 @@ const formValido = computed(() => {
                         </select>
                     </div>
 
-                    <div>
+                    <div v-if="!vendiendo">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                             >Descuento (%)</label
@@ -358,7 +377,9 @@ const formValido = computed(() => {
                         />
                     </div>
 
-                    <div>
+                    
+
+                    <div v-if="!vendiendo">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                         >
@@ -372,72 +393,97 @@ const formValido = computed(() => {
                     </div>
                 </div>
             </div>
+            <div
+                v-if="simuladoPlanPagos"
+                class="text-start sm:grid sm:grid-cols-3 rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
+            >
+                <div
+                    v-for="(value, index) in precios"
+                    :key="index"
+                    class="flex items-center sm:justify-evenly gap-3 border-b border-gray-200 py-3 last:border-b-0 dark:border-gray-700"
+                >
+                    <div class="flex items-center gap-2">
+                        <i
+                            class="pi pi-dollar text-green-600 dark:text-green-400"
+                        />
+                        <span
+                            class="font-medium text-gray-900 dark:text-gray-100"
+                            >{{ value.titulo }}</span
+                        >
+                    </div>
+                    <span
+                        class="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                        >${{ value.precio }}</span
+                    >
+                </div>
+            </div>
         </div>
 
-        <!-- Panel derecho -->
-        <div
-            v-if="simuladoPlanPagos"
-            class="mt-5 w-full rounded-2xl border border-green-500 p-5 sm:mt-0 sm:w-2/3"
-        >
-            <h3
-                class="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100"
-            >
-                Plan de Pagos
-            </h3>
-
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr
-                            class="border-b border-gray-200 dark:border-gray-700"
-                        >
-                            <th
-                                class="pb-3 text-center text-sm font-medium text-gray-600 dark:text-gray-400"
-                                v-for="(value, index) in headerTablaPlanPago"
-                                :key="index"
-                            >
-                                {{ value.label }}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="h-full">
-                        <tr
-                            v-for="(item, index) in pagos"
-                            :key="index"
-                            class="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                        >
-                            <td
-                                class="py-3 text-center text-gray-900 dark:text-gray-100"
-                            >
-                                {{ index + 1 }}
-                            </td>
-                            <td
-                                class="py-3 text-center text-gray-700 dark:text-gray-300"
-                            >
-                                {{ item.fecha }}
-                            </td>
-                            <td
-                                class="py-3 text-center text-gray-900 dark:text-gray-100"
-                            >
-                                ${{ item.cuota }}
-                            </td>
-                            <td
-                                class="py-3 text-center text-gray-900 dark:text-gray-100"
-                            >
-                                ${{ item.saldo }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mensaje cuando no hay datos -->
+        <div v-if="simuladoPlanPagos" class="mt-5 w-full sm:p-4">
             <div
-                v-if="!pagos || pagos.length === 0"
-                class="py-8 text-center text-gray-500 dark:text-gray-400"
+                class="rounded-2xl border-2 border-green-500 p-3 dark:border-green-700 dark:bg-gray-800"
             >
-                <i class="pi pi-info-circle mb-2 text-3xl"></i>
-                <p>No hay datos para mostrar</p>
+                <h3
+                    class="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100"
+                >
+                    Plan de Pagos
+                </h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr
+                                class="border-b border-gray-200 dark:border-gray-700"
+                            >
+                                <th
+                                    class="pb-3 text-center text-sm font-medium text-gray-600 dark:text-gray-400"
+                                    v-for="(
+                                        value, index
+                                    ) in headerTablaPlanPago"
+                                    :key="index"
+                                >
+                                    {{ value.label }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="h-full overflow-auto-x">
+                            <tr
+                                v-for="(item, index) in pagos"
+                                :key="index"
+                                class="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                            >
+                                <td
+                                    class="py-3 text-center text-gray-900 dark:text-gray-100"
+                                >
+                                    {{ index + 1 }}
+                                </td>
+                                <td
+                                    class="py-3 text-center text-gray-700 dark:text-gray-300"
+                                >
+                                    {{ item.fecha }}
+                                </td>
+                                <td
+                                    class="py-3 text-center text-gray-900 dark:text-gray-100"
+                                >
+                                    ${{ item.cuota }}
+                                </td>
+                                <td
+                                    class="py-3 text-center text-gray-900 dark:text-gray-100"
+                                >
+                                    ${{ item.saldo }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div
+                    v-if="!pagos || pagos.length === 0"
+                    class="py-8 text-center text-gray-500 dark:text-gray-400"
+                >
+                    <i class="pi pi-info-circle mb-2 text-3xl"></i>
+                    <p>No hay datos para mostrar</p>
+                </div>
             </div>
         </div>
     </div>
