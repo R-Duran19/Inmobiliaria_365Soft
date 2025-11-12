@@ -22,6 +22,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::get('/ultimoId', [ProyectoController::class, 'getUltimoId']);
         Route::post('/poligono/{idproyecto}', [ProyectoController::class, 'postPoligono']);
         Route::get('/poligono/{idproyecto}', [ProyectoController::class, 'getPoligono']);
+        Route::post('/poligono/{idProyecto}', [ProyectoController::class, 'updateProyectoPoligono']);
+
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])

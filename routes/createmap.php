@@ -38,6 +38,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 
         Route::get('/poligonos/{proyecto}', [PolygonEditorController::class, 'getPoligonos']);
 
+        Route::get('/poligono/proyecto/{proyecto}', [PolygonEditorController::class, 'getPoligonoProy']);
+
         Route::post('/update-poligono', [PolygonEditorController::class, 'updatePoligono'])
             ->name('update-poligono');
 
