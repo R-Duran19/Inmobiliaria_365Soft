@@ -444,6 +444,10 @@ public function getPoligonos($idProyecto)
     ->whereNotNull('poligono')
     ->get();
 
+    $proyecto = Proyecto::where('id', $idProyecto)
+        ->whereNotNull('poligono')
+        ->first(); // Usar first() en lugar de get() ya que solo esperas un proyecto
+
     return response()->json([
         'success' => true,
         'data' => [
@@ -451,26 +455,47 @@ public function getPoligonos($idProyecto)
                 return [
                     'id' => $barrio->id,
                     'nombre' => $barrio->nombre,
-                    'geometry' => $barrio->poligono, // Usa el accessor
+                    'geometry' => $barrio->poligono,
                 ];
             }),
             'cuadras' => $cuadras->map(function ($cuadra) {
                 return [
                     'id' => $cuadra->id,
                     'nombre' => $cuadra->nombre,
-                    'geometry' => $cuadra->poligono, // Usa el accessor
+                    'geometry' => $cuadra->poligono,
+                    'idbarrio' => $cuadra->idbarrio
                 ];
             }),
             'terrenos' => $terrenos->map(function ($terreno) {
                 return [
                     'id' => $terreno->id,
                     'numero' => $terreno->numero_terreno,
-                    'geometry' => $terreno->poligono, // Usa el accessor
+                    'geometry' => $terreno->poligono,
+                    'idcuadra' => $terreno->idcuadra
                 ];
             }),
         ],
     ]);
 }
+
+public function getPoligonoProy($idProyecto)
+{
+    $proyecto = Proyecto::where('id', $idProyecto)
+        ->whereNotNull('poligono')
+        ->first(); // Usar first() en lugar de get() ya que solo esperas un proyecto
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'proyecto' => $proyecto ? [
+                'id' => $proyecto->id,
+                'geometry' => $proyecto->poligono,
+            ] : null,
+        ],
+    ]);
+}
+
+
 
 
     public function updatePoligono(Request $request)

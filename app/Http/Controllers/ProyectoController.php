@@ -382,12 +382,60 @@ class ProyectoController extends Controller
     }
 
     public function getPoligono($idProyecto)
-{
-    $proyecto = Proyecto::find($idProyecto);
-    $poligono = $proyecto ? $proyecto->poligono : null;
+    {
+        $proyecto = Proyecto::find($idProyecto);
+        $poligono = $proyecto ? $proyecto->poligono : null;
 
-    return response()->json($poligono);
-}
+        return response()->json($poligono);
+    }
+
+    public function updateProyectoPoligono(Request $request, $idProyecto)
+    {
+        $validator = Validator::make($request->all(), [
+            'poligono' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $proyecto = Proyecto::find($idProyecto);
+
+            if (!$proyecto) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proyecto no encontrado'
+                ], 404);
+            }
+
+            $coordinates = $request->poligono['coordinates'][0];
+            $lineString = new LineString(
+                array_map(function ($coordinate) {
+                    return new Point($coordinate[1], $coordinate[0]);
+                }, $coordinates)
+            );
+            $polygon = new Polygon([$lineString]);
+
+            $proyecto->poligono = $polygon;
+            $proyecto->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Polígono del proyecto actualizado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar el polígono del proyecto', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el polígono del proyecto'
+            ], 500);
+        }
+    }
+
 
 
 
