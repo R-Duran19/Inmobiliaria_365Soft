@@ -14,6 +14,18 @@ import { onMounted, Ref, ref } from 'vue';
 
 const toast = useToast();
 
+interface GeoJsonFeature {
+    type: "Feature";
+    geometry: {
+        type: "Polygon";
+        coordinates: number[][][];
+    };
+    properties: {
+        id: number;
+    };
+}
+
+
 interface Proyecto {
     id: number;
     nombre: string;
@@ -26,7 +38,7 @@ interface Proyecto {
     terrenos_disponibles: number;
     terrenos_vendidos: number;
     terrenos_reservados: number;
-    poligono?: any;
+    geometry?: any;
 }
 
 declare module 'leaflet' {
@@ -67,6 +79,13 @@ const props = defineProps({
     },
 });
 
+interface Poligono {
+    geometry: any;
+}
+
+const poligono = ref<Poligono>();
+
+
 const proyectoPoligonoLayer: Ref<L.Layer | null> = ref(null);
 
 
@@ -80,7 +99,7 @@ let poligonoEditado: { tipo: string; id: number; geometry: any } | null = null;
 const barrios = ref<Barrio[]>([]);
 const cuadras = ref<Cuadra[]>([]);
 const terrenos = ref<Terreno[]>([]);
-const proyecto_ = ref<any[]>([]);
+const proyecto_ = ref<Proyecto | null>(null);
 const terrenosOriginales = ref<Terreno[]>([]);
 
 let map: L.Map | null = null;
@@ -159,7 +178,7 @@ const mostrarPoligonosFiltrados = async ({
                     geometry: barrioAsociado.geometry,
                     nombre: barrioAsociado.nombre,
                     id: barrioAsociado.id,
-                    esAsociado: true, // Marca para aplicar estilo especial
+                    esAsociado: true, 
                 },
                 {
                     tipo: 'cuadra',
@@ -191,14 +210,14 @@ const mostrarPoligonosFiltrados = async ({
                     geometry: barrioAsociado.geometry,
                     nombre: barrioAsociado.nombre,
                     id: barrioAsociado.id,
-                    esAsociado: true, // Marca para aplicar estilo especial
+                    esAsociado: true, 
                 },
                 {
                     tipo: 'cuadra',
                     geometry: cuadraAsociada.geometry,
                     nombre: cuadraAsociada.nombre,
                     id: cuadraAsociada.id,
-                    esAsociado: true, // Marca para aplicar estilo especial
+                    esAsociado: true, 
                 },
                 {
                     tipo: 'terreno',
@@ -215,7 +234,7 @@ const mostrarPoligonosFiltrados = async ({
                 style: {
                     color: getColorByType(item.tipo),
                     fillColor: getColorByType(item.tipo),
-                    fillOpacity: item.esAsociado ? 0 : 0.5, // Sin relleno si es asociado
+                    fillOpacity: item.esAsociado ? 0 : 0.5, 
                     weight: 2,
                 },
             }).addTo(map!);
@@ -421,7 +440,7 @@ const cargarPoligonosGuardados = async (idProyecto: number) => {
                 });
             });
 
-            // Añadir el polígono del proyecto al mapa
+            
 
             if (group.getLayers().length > 0) {
                 map.fitBounds(group.getBounds(), { padding: [20, 20] });
@@ -496,6 +515,55 @@ async function getTerrenos(idProyecto: number) {
         console.error('Error al cargar los terrenos:', error);
     }
 }
+
+const mostrarPoligonoProyecto = () => {
+    if (!proyecto_.value || !proyecto_.value.geometry) {
+        console.warn("⚠️ proyecto_.value o su geometry no están definidos");
+        return;
+    }
+
+    
+    const poligonoGeoJSON: GeoJsonFeature = {
+        type: "Feature",
+        geometry: proyecto_.value.geometry,
+        properties: { id: proyecto_.value.id }
+    };
+
+    
+    if (proyectoPoligonoLayer.value) {
+        map?.removeLayer(proyectoPoligonoLayer.value);
+        proyectoPoligonoLayer.value = null;
+    }
+
+    
+    proyectoPoligonoLayer.value = L.geoJSON(poligonoGeoJSON, {
+        style: {
+            color: '#22c55e',
+            fillColor: '#22c55e',
+            fillOpacity: 0.2,
+            weight: 3,
+        }
+    }).addTo(map!);
+
+    
+    (proyectoPoligonoLayer.value as any).eachLayer((layer: any) => {
+        layer.pm.enable({
+            allowSelfIntersection: false,
+        });
+
+        
+        layer.on('pm:edit', (e: any) => {
+            editarActivo.value = true;
+            const geojson = e.target.toGeoJSON();
+            console.log("Polígono editado:", geojson);
+        });
+    });
+};
+
+
+
+
+
 
 async function getPoligonoProyecto(idProyecto: number) {
     try {
@@ -572,7 +640,7 @@ const actualizarVisibilidadTooltips = (nivel: 'barrios' | 'cuadras' | 'terrenos'
     if (!map) return;
     map.eachLayer((layer: any) => {
         if (layer.tooltipType) {
-            // Mostrar todos los tooltips
+            
             if (layer.getTooltip) {
                 const tooltipElement = layer.getTooltip()?.getElement();
                 if (tooltipElement) {
@@ -580,7 +648,7 @@ const actualizarVisibilidadTooltips = (nivel: 'barrios' | 'cuadras' | 'terrenos'
                 }
             }
 
-            // Ocultar el relleno de los polígonos que no corresponden al nivel actual
+            
             if (nivel === 'barrios' && layer.tooltipType !== 'barrio') {
                 layer.setStyle({ fillOpacity: 0 });
             } else if (nivel === 'cuadras' && layer.tooltipType !== 'cuadra') {
@@ -588,7 +656,7 @@ const actualizarVisibilidadTooltips = (nivel: 'barrios' | 'cuadras' | 'terrenos'
             } else if (nivel === 'terrenos' && layer.tooltipType !== 'terreno') {
                 layer.setStyle({ fillOpacity: 0 });
             } else {
-                // Restaurar el relleno para los polígonos del nivel actual
+                
                 layer.setStyle({ fillOpacity: 0.5 });
             }
         }
@@ -596,7 +664,26 @@ const actualizarVisibilidadTooltips = (nivel: 'barrios' | 'cuadras' | 'terrenos'
 };
 
 
-const toggleEditarProyecto = () => {
+const toggleEditarProyecto = async () => {
+    if (editarProyectoActivo.value) {
+        
+        if (proyectoPoligonoLayer.value) {
+            map?.removeLayer(proyectoPoligonoLayer.value);
+            proyectoPoligonoLayer.value = null;
+        }
+        editarProyectoActivo.value = false;
+    } else {
+        
+        await cargarPoligonoProyecto(Number(props.selectedProyectoId));
+        mostrarPoligonoProyecto(); 
+        editarProyectoActivo.value = true;
+    }
+};
+
+
+
+
+const guardarPoligonoProyecto = async () => {
     if (!proyectoPoligonoLayer.value) {
         toast.add({
             severity: 'warn',
@@ -607,26 +694,13 @@ const toggleEditarProyecto = () => {
         return;
     }
 
-    editarProyectoActivo.value = !editarProyectoActivo.value;
-
-    if (editarProyectoActivo.value) {
-        (proyectoPoligonoLayer.value as any).pm.enable({ allowSelfIntersection: false });
-        (proyectoPoligonoLayer.value as any).on('pm:edit', () => {
-            const geojson = (proyectoPoligonoLayer.value as any).toGeoJSON();
-            const geometry = geojson.type === 'FeatureCollection'
-                ? geojson.features[0].geometry
-                : geojson.geometry;
-            guardarPoligonoProyecto(geometry);
-        });
-    } else {
-        (proyectoPoligonoLayer.value as any).pm.disable();
-    }
-};
-
-
-const guardarPoligonoProyecto = async (geometry: any) => {
     try {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const geojson = (proyectoPoligonoLayer.value as any).toGeoJSON();
+        const geometry = geojson.type === 'FeatureCollection'
+            ? geojson.features[0].geometry
+            : geojson.geometry;
+
         const response = await fetch(`/proyectos/poligono/${Number(props.selectedProyectoId)}`, {
             method: 'POST',
             headers: {
@@ -635,6 +709,7 @@ const guardarPoligonoProyecto = async (geometry: any) => {
             },
             body: JSON.stringify({ poligono: geometry }),
         });
+
         const data = await response.json();
         if (data.success) {
             toast.add({
@@ -643,6 +718,11 @@ const guardarPoligonoProyecto = async (geometry: any) => {
                 detail: 'Polígono del proyecto actualizado correctamente',
                 life: 3000,
             });
+            
+            (proyectoPoligonoLayer.value as any).eachLayer((layer: any) => {
+                layer.pm.disable();
+            });
+            editarActivo.value = false;
         } else {
             toast.add({
                 severity: 'error',
@@ -662,6 +742,8 @@ const guardarPoligonoProyecto = async (geometry: any) => {
     }
 };
 
+
+
 const cargarPoligonoProyecto = async (idProyecto: number) => {
     try {
         const response = await fetch(`/proyectos/poligono/${idProyecto}`);
@@ -671,7 +753,6 @@ const cargarPoligonoProyecto = async (idProyecto: number) => {
                 map?.removeLayer(proyectoPoligonoLayer.value);
                 proyectoPoligonoLayer.value = null;
             }
-
             const poligonoGeoJSON = typeof data.poligono === 'string' ? JSON.parse(data.poligono) : data.poligono;
             proyectoPoligonoLayer.value = L.geoJSON(poligonoGeoJSON, {
                 style: {
@@ -681,15 +762,28 @@ const cargarPoligonoProyecto = async (idProyecto: number) => {
                     weight: 3,
                 }
             }).addTo(map!);
-
-            if (editarProyectoActivo.value) {
-                (proyectoPoligonoLayer.value as any).pm.enable({ allowSelfIntersection: false });
-            }
+            
         }
     } catch (error) {
         console.error('Error al cargar el polígono del proyecto:', error);
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Error al cargar el polígono del proyecto',
+            life: 3000,
+        });
     }
 };
+async function getPoligono(idProyecto: number) {
+    try {
+        const response = await fetch(`/proyectos/poligono/${idProyecto}`);
+        const data = await response.json();
+        poligono.value = data;
+        console.log('poli ', poligono.value);
+    } catch (error) {
+        console.error('Error cargando datos:', error);
+    } 
+}
 
 
 
@@ -719,7 +813,8 @@ onMounted(async () => {
         getBarrios(idProyecto),
         getTerrenos(idProyecto),
         cargarPoligonosGuardados(idProyecto),
-        getPoligonoProyecto(idProyecto)
+        getPoligonoProyecto(idProyecto),
+        getPoligono(idProyecto)
     ]);
 
     
@@ -829,9 +924,36 @@ onMounted(async () => {
         }
     });
 
-    // Dispara el evento zoomend al cargar el mapa
+    
+
+    
     setTimeout(() => map!.fire('zoomend'), 1000);
-    await cargarPoligonoProyecto(idProyecto);
+
+    if (poligono.value && map) {
+            const poligonoGeoJSON =
+                typeof poligono.value === 'string'
+                    ? JSON.parse(poligono.value)
+                    : poligono.value;
+
+            const proyectoLayer = L.geoJSON(poligonoGeoJSON);
+            const bounds = proyectoLayer.getBounds();
+
+            if (bounds.isValid()) {
+                map.flyToBounds(bounds, {
+                    padding: [50, 50],
+                    duration: 1.5,
+                    easeLinearity: 0.25,
+                });
+
+                setTimeout(() => {
+                    if (map) {
+                        map.setMaxBounds(bounds.pad(0.1));
+                        map.setZoom(13);
+                    }
+                }, 1600);
+            }
+        }
+
 });
 </script>
 
@@ -939,7 +1061,16 @@ onMounted(async () => {
                     </details>
 
                     <button
+                        v-if="!editarProyectoActivo"
                         @click="guardarCambios"
+                        :disabled="!editarActivo"
+                        class="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-2 text-white shadow-lg disabled:cursor-not-allowed disabled:bg-gray-400"
+                    >
+                        💾 Guardar cambios
+                    </button>
+                    <button
+                        v-if="editarProyectoActivo"
+                        @click="guardarPoligonoProyecto"
                         :disabled="!editarActivo"
                         class="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-2 text-white shadow-lg disabled:cursor-not-allowed disabled:bg-gray-400"
                     >
