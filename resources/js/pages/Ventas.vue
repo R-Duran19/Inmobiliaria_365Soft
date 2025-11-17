@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
+import axios from 'axios';
+import { computed, reactive, ref } from 'vue';
+import Loading from '@/components/ui/Loading/Loading.vue';
+import ModalVenta from './Ventas/ModalVenta.vue';
 
 const props = defineProps<{
     terreno: {
@@ -16,12 +20,18 @@ const props = defineProps<{
 }>();
 
 const simuladoPlanPagos = ref(false);
+const loading = ref(false);
 const headerTablaPlanPago = [
     { label: 'N° Cuota' },
     { label: 'Fecha' },
     { label: 'Cuota' },
     { label: 'Saldo' },
 ];
+const notificacion = reactive({
+    visible: false,
+    tipo: 'success' as 'success' | 'error',
+    mensaje: '',
+});
 
 const infoItems = [
     {
@@ -41,39 +51,6 @@ const infoItems = [
     {
         label: 'Precio referencial (USD)',
         valor: props.terreno.precio_venta,
-        icon: 'pi-money-bill',
-        color: 'text-yellow-500',
-        darkColor: 'dark:text-yellow-400',
-    },
-];
-
-const infoCompras = [
-    {
-        label: 'Tipo de compra',
-        icon: 'pi-folder',
-        color: 'text-indigo-500',
-        darkColor: 'dark:text-indigo-400',
-    },
-    {
-        label: 'Cuota inicial (USD)',
-        icon: 'pi-map-marker',
-        color: 'text-green-500',
-        darkColor: 'dark:text-green-400',
-    },
-    {
-        label: 'Plazo',
-        icon: 'pi-money-bill',
-        color: 'text-yellow-500',
-        darkColor: 'dark:text-yellow-400',
-    },
-    {
-        label: 'Descuento(%)',
-        icon: 'pi-money-bill',
-        color: 'text-yellow-500',
-        darkColor: 'dark:text-yellow-400',
-    },
-    {
-        label: 'Fecha 1er. Pago',
         icon: 'pi-money-bill',
         color: 'text-yellow-500',
         darkColor: 'dark:text-yellow-400',
@@ -123,10 +100,10 @@ const plazos_descuentos = ref([
     },
 ]);
 
-
+const mostrarModal = ref(false);
 const continuarCompra = ref(false);
 const vendiendo = ref(false);
-const precioVenta = ref(props.terreno.precio_venta*0.5);
+const precioVenta = ref(props.terreno.precio_venta * 0.5);
 const tipoCompra = ref('En cuotas');
 const cuotaInicial = ref(props.terreno.cuota_inicial);
 const fechaPrimerPago = ref('');
@@ -143,6 +120,12 @@ function aumentarMes(fecha: Date): Date {
     const nuevaFecha = new Date(fecha);
     nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
     return nuevaFecha;
+}
+
+function mostrarNotificacion(tipo: 'success' | 'error', mensaje: string) {
+    notificacion.tipo = tipo;
+    notificacion.mensaje = mensaje;
+    notificacion.visible = true;
 }
 
 const datos = computed(() => ({
@@ -189,6 +172,7 @@ const pagos = computed(() => {
 
 function mostrarTabla() {
     simuladoPlanPagos.value = !simuladoPlanPagos.value;
+    continuarCompra.value = true;
     console.log('pagos', pagos);
 }
 
@@ -217,8 +201,8 @@ const formValido = computed(() => {
 function verificarTipoCompra() {
     if (tipoCompra.value === 'Pago inmediato') {
         vendiendo.value = true;
-        plazoSeleccionado.value = ''; 
-        fechaPrimerPago.value = '';   
+        plazoSeleccionado.value = '';
+        fechaPrimerPago.value = '';
         continuarCompra.value = true;
     } else {
         vendiendo.value = false;
@@ -226,12 +210,52 @@ function verificarTipoCompra() {
     }
 }
 
+function handleClienteSeleccionado(cliente: any) {
+    console.log('Cliente seleccionado:', cliente);
+    // Aquí puedes hacer lo que necesites con el cliente
+    // Por ejemplo, guardarlo en un estado, enviarlo a otra vista, etc.
+    mostrarModal.value = false;
+}
 
+async function handleNuevoCliente(cli: any) {
+    console.log('Creando nuevo cliente', cli);
 
+    try {
+        loading.value = true;
+        const response = await axios.post('/clientes/', cli);
+        const cliente = response.data.cliente;
+    } catch (error) {
+        console.error('Error al buscar cliente:', error);
+        mostrarNotificacion('error', 'No se pudo añadir al cliente.');
+    } finally {
+        loading.value = false;
+        mostrarNotificacion('success', 'Cliente añadido correctamente.');
+    }
+    // Aquí puedes redirigir al formulario de nuevo cliente
+    // O abrir otro modal para crear el cliente
+    mostrarModal.value = false;
+}
 </script>
 
 <template>
     <div class="flex w-full flex-col gap-5 overflow-x-hidden p-4">
+        <ModalVenta
+            v-model:visible="mostrarModal"
+            @cliente-seleccionado="handleClienteSeleccionado"
+            @nuevo-cliente="handleNuevoCliente"
+        />
+        <NotificacionToast
+            v-model="notificacion.visible"
+            :type="notificacion.tipo"
+            :message="notificacion.mensaje"
+        />
+        <div
+            v-if="loading"
+            class="absolute inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        >
+            <Loading />
+        </div>
+
         <div class="flex w-full flex-col gap-2 sm:px-4">
             <div
                 class="flex flex-col items-start justify-between gap-3 rounded-2xl border-2 border-green-500 p-4 lg:flex-row lg:items-center dark:border-green-700 dark:bg-gray-800"
@@ -269,38 +293,35 @@ function verificarTipoCompra() {
                     <span class="text-white">Simular plan de Pagos</span>
                 </button>
                 <button
-                    class="flex w-full items-center justify-center gap-2 rounded-2xl border border-green-700 bg-green-700 hover:bg-green-600 p-3 transition sm:w-auto"
-                    @click=""
+                    class="flex w-full items-center justify-center gap-2 rounded-2xl border border-green-700 bg-green-700 p-3 transition hover:bg-green-600 sm:w-auto"
+                    @click="mostrarModal = true"
                     v-if="continuarCompra"
                 >
                     <span class="text-white">Siguiente</span>
                     <i class="pi pi-arrow-right text-white" />
                 </button>
-
-
-                
             </div>
 
             <div
-                class="flex flex-col w-full rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
+                class="mt-3 flex w-full flex-col rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
             >
-            <div class="flex gap-4">
-                <div class="flex-1 mb-4">
-                    <label
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                        >Tipo de compra</label
-                    >
-                    <select
-                        v-model="tipoCompra"
-                        class="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                        @change="verificarTipoCompra"
-                    >
-                        <option>En cuotas</option>
-                        <option>Pago inmediato</option>
-                    </select>
-                </div>
+                <div class="flex gap-4">
+                    <div class="mb-4 flex-1">
+                        <label
+                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >Tipo de compra</label
+                        >
+                        <select
+                            v-model="tipoCompra"
+                            class="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            @change="verificarTipoCompra"
+                        >
+                            <option>En cuotas</option>
+                            <option>Pago inmediato</option>
+                        </select>
+                    </div>
 
-                <div v-if="vendiendo" class="flex-1">
+                    <div v-if="vendiendo" class="flex-1">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                             >Descuento (%)</label
@@ -309,8 +330,7 @@ function verificarTipoCompra() {
                             type="number"
                             :value="'50'"
                             :disabled="true"
-                            class="w-full rounded-lg border border-gray-300 bg-gray-100 p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100
-                            disabled:opacity-50"
+                            class="w-full rounded-lg border border-gray-300 bg-gray-100 p-3 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                         />
                     </div>
 
@@ -323,13 +343,12 @@ function verificarTipoCompra() {
                             type="number"
                             :value="Number(precioVenta).toFixed(2)"
                             :disabled="true"
-                            class="w-full rounded-lg border border-gray-300 bg-gray-100 p-3 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 disabled:opacity-50"
+                            class="w-full rounded-lg border border-gray-300 bg-gray-100 p-3 text-gray-900 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                         />
                     </div>
-            </div>
-                
+                </div>
 
-                <div class="flex flex-col sm:grid sm:grid-cols-4 gap-4">
+                <div class="flex flex-col gap-4 sm:grid sm:grid-cols-4">
                     <div v-if="!vendiendo">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -377,8 +396,6 @@ function verificarTipoCompra() {
                         />
                     </div>
 
-                    
-
                     <div v-if="!vendiendo">
                         <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -395,12 +412,12 @@ function verificarTipoCompra() {
             </div>
             <div
                 v-if="simuladoPlanPagos"
-                class="text-start sm:grid sm:grid-cols-3 rounded-2xl border-2 border-green-500 bg-white p-4 dark:border-green-700 dark:bg-gray-800"
+                class="mt-3 rounded-2xl border-2 border-green-500 bg-white p-4 text-start sm:grid sm:grid-cols-3 dark:border-green-700 dark:bg-gray-800"
             >
                 <div
                     v-for="(value, index) in precios"
                     :key="index"
-                    class="flex items-center sm:justify-evenly gap-3 border-b border-gray-200 py-3 last:border-b-0 dark:border-gray-700"
+                    class="flex items-center gap-3 border-b border-gray-200 py-3 last:border-b-0 sm:justify-evenly dark:border-gray-700"
                 >
                     <div class="flex items-center gap-2">
                         <i
@@ -419,7 +436,7 @@ function verificarTipoCompra() {
             </div>
         </div>
 
-        <div v-if="simuladoPlanPagos" class="mt-5 w-full sm:p-4">
+        <div v-if="simuladoPlanPagos" class="w-full sm:p-4 sm:pt-0">
             <div
                 class="rounded-2xl border-2 border-green-500 p-3 dark:border-green-700 dark:bg-gray-800"
             >
@@ -446,7 +463,7 @@ function verificarTipoCompra() {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="h-full overflow-auto-x">
+                        <tbody class="overflow-auto-x h-full">
                             <tr
                                 v-for="(item, index) in pagos"
                                 :key="index"
