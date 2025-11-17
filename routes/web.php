@@ -42,3 +42,4 @@ require __DIR__.'/importacion.php';
 require __DIR__.'/ventas.php';
 require __DIR__.'/moneda.php';
 require __DIR__.'/createmap.php';
+require __DIR__.'/clientes.php';
