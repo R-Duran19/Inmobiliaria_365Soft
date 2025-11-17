@@ -32,28 +32,28 @@ class Terreno extends Model
         'cuota_mensual' => 'decimal:2',
         'precio_venta' => 'decimal:2',
         'condicion' => 'boolean',
-        'poligono' => Polygon::class, // Convierte automáticamente a objeto Polygon
+        'poligono' => Polygon::class, 
     ];
 
-    // Relación con proyecto
+    
     public function proyecto()
     {
         return $this->belongsTo(Proyecto::class, 'idproyecto');
     }
 
-    // Relación con categoría
+    
     public function categorias_terrenos()
     {
         return $this->belongsTo(CategoriaTerreno::class, 'idcategoria');
     }
 
-    // Relación con cuadra
+    
     public function cuadra()
     {
         return $this->belongsTo(Cuadra::class, 'idcuadra');
     }
 
-    // Accessor para obtener el polígono como GeoJSON
+    
     public function getPoligonoGeojsonAttribute()
     {
         if (!$this->poligono) {
