@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
-import axios from 'axios';
-import { computed, onMounted, reactive, ref } from 'vue';
-import Loading from '@/components/ui/Loading/Loading.vue';
-import ModalVenta from './Ventas/ModalVenta.vue';
 import ConfirmacionModal from '@/components/ui/confirmacionModal/ConfirmacionModal.vue';
+import Loading from '@/components/ui/Loading/Loading.vue';
+import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
 import { usePage } from '@inertiajs/vue3';
+import axios from 'axios';
+import { computed, reactive, ref } from 'vue';
+import ModalVenta from './Ventas/ModalVenta.vue';
 
 interface Cliente {
     id: number;
@@ -19,6 +19,17 @@ interface Cliente {
     codigo_carnet: string;
 }
 
+interface Cuota {
+    id: number;
+    idventa: number;
+    nro_cuota: number;
+    fecha_a_pagar: string;
+    valor_cuota: number;
+    saldo: number;
+    fecha_pago: string | null;
+    mora: number;
+    estado: number;
+}
 
 const props = defineProps<{
     terreno: {
@@ -43,6 +54,10 @@ const headerTablaPlanPago = [
     { label: 'Saldo' },
 ];
 const clienteSeleccionado = ref<Cliente | null>(null);
+
+const cuotas = ref<Cuota[]>([]);
+const cuota = ref<Cuota | null>(null);
+
 const notificacion = reactive({
     visible: false,
     tipo: 'success' as 'success' | 'error',
@@ -128,29 +143,27 @@ const cuotaInicial = ref(props.terreno.cuota_inicial);
 const fechaPrimerPago = ref('');
 const plazoSeleccionado = ref('');
 const nuevoCliente = ref<Cliente>({
-  id: 0,
-  nombre: '',
-  apellido_paterno: '',
-  apellido_materno: '',
-  telefono: '',
-  telefono_referencia: '',
-  direccion: '',
-  ci: '',
-  codigo_carnet: ''
+    id: 0,
+    nombre: '',
+    apellido_paterno: '',
+    apellido_materno: '',
+    telefono: '',
+    telefono_referencia: '',
+    direccion: '',
+    ci: '',
+    codigo_carnet: '',
 });
 
-
 const descuento = computed(() => {
-    if (tipoCompra.value == "Pago inmediato") {
-        return 50.00;
+    if (tipoCompra.value == 'Pago inmediato') {
+        return 50.0;
     } else {
         const plazo = plazos_descuentos.value.find(
             (p) => p.plazo === plazoSeleccionado.value,
         );
-        return plazo ? parseFloat(plazo.descuento) : 0; 
+        return plazo ? parseFloat(plazo.descuento) : 0;
     }
 });
-
 
 function aumentarMes(fecha: Date): Date {
     const nuevaFecha = new Date(fecha);
@@ -168,12 +181,10 @@ const datos = computed(() => ({
     tipoCompra: tipoCompra.value,
     cuotaInicial: parseFloat(cuotaInicial.value.toString()),
     plazo: parseFloat(plazoSeleccionado.value.toString()),
-    descuento: descuento.value, 
+    descuento: descuento.value,
     precioReferencial: parseFloat(props.terreno.precio_venta.toString()),
     fechaPrimerPago: fechaPrimerPago.value,
 }));
-
-
 
 const precio_total = computed(
     () =>
@@ -186,7 +197,7 @@ const precio_a_pagar = computed(
 const precio_mes = computed(() => precio_a_pagar.value / datos.value.plazo);
 const descuento_total = computed(() =>
     Number(
-        datos.value.precioReferencial * (datos.value.descuento / 100)
+        datos.value.precioReferencial * (datos.value.descuento / 100),
     ).toFixed(2),
 );
 
@@ -250,21 +261,15 @@ function verificarTipoCompra() {
 
 function handleClienteSeleccionado(cliente: Cliente) {
     console.log('Cliente seleccionado:', cliente);
-    
-    
-    
+
     if (cliente.id) {
         nuevoCliente.value.id = cliente.id;
     }
-    
-    
+
     estadoDialogos.confirmacionVisible = true;
-    
-    
+
     mostrarModal.value = false;
 }
-
-
 
 async function handleNuevoCliente(cli: any) {
     console.log('Creando nuevo cliente', cli);
@@ -281,15 +286,13 @@ async function handleNuevoCliente(cli: any) {
         mostrarNotificacion('success', 'Cliente añadido correctamente.');
         estadoDialogos.confirmacionVisible = true;
     }
-    
-    
+
     mostrarModal.value = false;
 }
 
 function round(num: number): number {
     return Math.round(num * 100) / 100;
 }
-
 
 async function guardarDatosVenta() {
     try {
@@ -300,25 +303,40 @@ async function guardarDatosVenta() {
             idcliente: Number(nuevoCliente.value.id),
             idterreno: Number(props.terreno.id),
 
-            
             precio_lista: round(props.terreno.precio_venta),
-            descuento: round(descuento.value)/100,
+            descuento: round(descuento.value) / 100,
             precio_venta: round(precio_total.value),
             cuota_inicial: round(datos.value.cuotaInicial),
             total_plan_pago: round(precio_a_pagar.value),
         };
 
-        console.log("Enviando datos:", datosVenta, {
+        console.log('Enviando datos:', datosVenta, {
             tipos: {
                 lista: typeof datosVenta.precio_lista,
                 descuento: typeof datosVenta.descuento,
                 venta: typeof datosVenta.precio_venta,
                 cuota: typeof datosVenta.cuota_inicial,
                 total: typeof datosVenta.total_plan_pago,
-            }
+            },
         });
 
-        await axios.post('/ventas/', datosVenta);
+        const response = await axios.post('/ventas/', datosVenta);
+
+        const idVentaRegistrada = response.data.venta.id || response.data.venta.id; 
+        console.log('venta id ', idVentaRegistrada);
+
+        if (idVentaRegistrada) {
+            await guardarCuotas(idVentaRegistrada);
+        } else {
+            console.error(
+                'ID de venta no encontrado en la respuesta:',
+                response.data,
+            );
+            mostrarNotificacion(
+                'error',
+                'Venta registrada, pero no se pudo obtener el ID para registrar las cuotas.',
+            );
+        }
         mostrarNotificacion('success', 'Venta registrada correctamente.');
     } catch (error) {
         console.error('Error al registrar venta:', error);
@@ -329,13 +347,36 @@ async function guardarDatosVenta() {
     }
 }
 
+function prepararDatosCuotasParaBD(pagosSimulados: any[], idVenta: number) {
+    return pagosSimulados.map((pago) => ({
+        idventa: idVenta,
+        nro_cuota: pago.numero,
+        fecha_a_pagar: pago.fecha,
+        valor_cuota: pago.cuota,
+        saldo: null, 
+        fecha_pago: null, 
+        estado: 0, 
+        mora: 0,
+    }));
+}
 
+async function guardarCuotas(idVenta: number) {
+    if (tipoCompra.value !== 'En cuotas') return;
 
+    const cuotasParaBD = prepararDatosCuotasParaBD(pagos.value, idVenta);
+    console.log('Datos de cuotas para enviar:', cuotasParaBD);
 
-
-
-
-
+    try {
+        const response = await axios.post(`/cuotas`, cuotasParaBD);
+        mostrarNotificacion(
+            'success',
+            'Plan de pagos registrado correctamente.',
+        );
+    } catch (error) {
+        console.error('Error al registrar cuotas:', error);
+        mostrarNotificacion('error', 'No se pudieron registrar las cuotas.');
+    }
+}
 </script>
 
 <template>
