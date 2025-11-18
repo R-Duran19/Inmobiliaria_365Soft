@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Loading from '@/components/ui/Loading/Loading.vue';
+import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
 import axios from 'axios';
 import { computed, reactive, ref } from 'vue';
-import NotificacionToast from '@/components/ui/notificacionToast/NotificacionToast.vue';
 
 const props = defineProps<{
     visible: boolean;
@@ -91,7 +91,10 @@ async function buscarCliente() {
         buscando.value = false;
     } catch (error) {
         console.error('Error al buscar cliente:', error);
-        mostrarNotificacion('error', 'No se encontró el cliente con ese documento');
+        mostrarNotificacion(
+            'error',
+            'No se encontró el cliente con ese documento',
+        );
         clienteEncontrado.value = null;
         buscando.value = false;
     } finally {
@@ -113,6 +116,7 @@ function aceptar() {
         emit('cliente-seleccionado', clienteEncontrado.value);
     } else {
         emit('nuevo-cliente', nuevoCliente.value);
+        console.log('nuevo cliente');
     }
 
     // Resetear el formulario
@@ -229,28 +233,42 @@ function aceptar() {
                             </button>
                         </div>
 
-                        <div
-                            v-if="clienteEncontrado"
-                            class="mt-3 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20"
-                        >
-                            <div class="flex items-start gap-3">
-                                <i
-                                    class="pi pi-check-circle text-xl text-green-600 dark:text-green-400"
-                                ></i>
-                                <div class="flex-1">
-                                    <p
-                                        class="font-medium text-gray-900 dark:text-white"
+                        <div v-if="clienteEncontrado" class="mt-3">
+                            <button
+                                type="button"
+                                @click="aceptar"
+                                class="w-full rounded-lg border border-gray-200 bg-white cursor-pointer p-4 shadow-sm transition-all duration-200 hover:border-green-500 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-green-600"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
                                     >
-                                        Cliente encontrado
-                                    </p>
-                                    <p
-                                        class="mt-1 text-sm text-gray-600 dark:text-gray-400"
-                                    >
-                                        {{ clienteEncontrado.nombre }} -
-                                        {{ clienteEncontrado.ci }}
-                                    </p>
+                                        <i
+                                            class="pi pi-check text-green-600 dark:text-green-400"
+                                        ></i>
+                                    </div>
+                                    <div class="flex-1 text-left">
+                                        <p
+                                            class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                                        >
+                                            Cliente encontrado
+                                        </p>
+                                        <p
+                                            class="mt-0.5 text-base font-semibold text-gray-900 dark:text-white"
+                                        >
+                                            {{ clienteEncontrado.nombre }}
+                                        </p>
+                                        <p
+                                            class="text-sm text-gray-600 dark:text-gray-400"
+                                        >
+                                            CI: {{ clienteEncontrado.ci }}
+                                        </p>
+                                    </div>
+                                    <i
+                                        class="pi pi-chevron-right text-gray-400 dark:text-gray-500"
+                                    ></i>
                                 </div>
-                            </div>
+                            </button>
                         </div>
                     </div>
                 </div>
