@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('nro_cuota');
             $table->date('fecha_a_pagar');
             $table->decimal('valor_cuota', 10, 2);
-            $table->decimal('saldo', 10, 2);
+            $table->decimal('saldo', 10, 2)->nullable();
             $table->timestamp('fecha_pago')->nullable(); 
 
             $table->tinyInteger('estado')->default(0);
